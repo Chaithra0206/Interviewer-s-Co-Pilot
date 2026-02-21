@@ -84,7 +84,7 @@ export default function CandidateDashboard({ candidateName, role, roomId, onExit
             setOutput(formatResult(result));
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "Unknown error";
-            setOutput(`> \u274c Error: ${message}`);
+            setOutput(`> ❌ Error: ${message}`);
         } finally {
             setIsRunning(false);
         }
@@ -201,31 +201,34 @@ export default function CandidateDashboard({ candidateName, role, roomId, onExit
 
                 {/* Right: Video & Controls */}
                 <div className="candidate-panel w-80 flex flex-col gap-4">
-                    <div className="relative flex-1 bg-zinc-100 dark:bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-sm min-h-[400px]">
-                        <div className="absolute inset-0 w-full h-full z-0 pointer-events-auto shadow-inner bg-black">
+                    {/* Interviewer Video (Remote / Jitsi Wrapper) */}
+                    <div className="relative aspect-video bg-zinc-100 dark:bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-sm min-h-[400px]">
+                        <div className="absolute inset-0 w-full h-full z-0 pointer-events-auto bg-black shadow-inner">
                             {JitsiNode}
                         </div>
-                        
                         {connectionState !== "connected" && (
                             <div className="absolute inset-0 flex items-center justify-center bg-zinc-100 dark:bg-zinc-900 z-10">
                                 <div className="flex flex-col items-center gap-4">
-                                  <div className="w-16 h-16 rounded-3xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shadow-lg">
-                                      {connectionState === "connecting" ? (
-                                          <div className="w-6 h-6 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
-                                      ) : connectionState === "failed" ? (
-                                          <span className="text-xl font-bold text-red-500">!</span>
-                                      ) : (
-                                          <span className="text-xl font-bold text-zinc-400">AR</span>
-                                      )}
-                                  </div>
-                                  <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">
-                                      {connectionState === "connecting" ? "Joining Call..." :
-                                       connectionState === "failed" ? "Connection Failed" : "Waiting"}
-                                  </p>
+                                    <div className="w-16 h-16 rounded-3xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shadow-lg">
+                                        {connectionState === "connecting" ? (
+                                            <div className="w-6 h-6 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
+                                        ) : connectionState === "failed" ? (
+                                            <span className="text-xl font-bold text-red-500">!</span>
+                                        ) : (
+                                            <span className="text-xl font-bold text-zinc-400">AR</span>
+                                        )}
+                                    </div>
+                                    <p className="text-xs font-bold uppercase tracking-widest text-zinc-500">
+                                        {connectionState === "connecting" ? "Joining Call..." :
+                                            connectionState === "failed" ? "Connection Failed" : "Waiting"}
+                                    </p>
                                 </div>
                             </div>
                         )}
-                        <div className="absolute bottom-3 left-3 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md px-3 py-1.5 rounded-xl text-[11px] font-bold text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-800 shadow-sm z-20 pointer-events-none">
+                        <div className="absolute top-3 left-3 z-[15] bg-zinc-900/80 backdrop-blur-md text-white text-[9px] font-bold px-2 py-1 rounded-md uppercase tracking-widest border border-white/10">
+                            Interviewer
+                        </div>
+                        <div className="absolute bottom-3 left-3 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md px-3 py-1.5 rounded-xl text-[11px] font-bold text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-800 shadow-sm">
                             {candidateName}
                         </div>
                     </div>

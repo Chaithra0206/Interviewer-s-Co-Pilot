@@ -271,4 +271,3 @@ export default function Lobby({ onStartSession, onJoinSession }: LobbyProps) {
     </div>
   );
 }
-

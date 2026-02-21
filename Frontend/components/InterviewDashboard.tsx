@@ -236,7 +236,6 @@ export default function InterviewDashboard({ candidateName, role, roomId }: Dash
             connectionState={connectionState}
             candidateName={candidateName}
           />
-
           {/* New Truth Meter / Analysis UI Overlay */}
           {latestSyncResult && (
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 shadow-xl">
@@ -275,8 +274,8 @@ export default function InterviewDashboard({ candidateName, role, roomId }: Dash
           </div>
           <div className="flex items-center gap-2 text-xs text-zinc-400 font-medium">
             <span className={`w-1.5 h-1.5 rounded-full ${connectionState === "connected" ? "bg-emerald-500" :
-                connectionState === "connecting" ? "bg-amber-500 animate-pulse" :
-                  "bg-zinc-500"
+              connectionState === "connecting" ? "bg-amber-500 animate-pulse" :
+                "bg-zinc-500"
               }`} />
             {connectionState === "connected" ? (
               <Wifi className="w-3 h-3 text-emerald-400" />

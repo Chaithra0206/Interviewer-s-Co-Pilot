@@ -6,6 +6,7 @@
 import React, { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 
+
 interface VideoStackProps {
   JitsiNode: React.ReactNode;
   connectionState: string;
@@ -35,7 +36,7 @@ export default function VideoStack({
   }, []);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full" ref={containerRef}>
       <div
         className="relative flex-1 bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 shadow-lg min-h-[400px]"
       >
@@ -53,9 +54,8 @@ export default function VideoStack({
               ) : (
                 <span className="text-xl font-bold text-zinc-100">
                   {candidateName
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")}
+                    ? candidateName.split(" ").map((n) => n[0]).join("")
+                    : "AR"}
                 </span>
               )}
             </div>

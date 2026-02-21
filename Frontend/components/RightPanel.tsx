@@ -5,6 +5,7 @@
 
 import VideoStack from "./VideoStack";
 
+
 interface RightPanelProps {
   JitsiNode: React.ReactNode;
   connectionState: string;
