@@ -1,33 +1,38 @@
-// components/SkillCloud.tsx
-"use client";
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
-import { useEffect, useRef } from "react";
+import React, { useEffect, useRef, memo } from "react";
 import { gsap } from "gsap";
 
-const skills = [
+interface Skill {
+  name: string;
+  level: number;
+  match: boolean;
+}
+
+const SKILLS: Skill[] = [
   { name: "React", level: 95, match: true },
   { name: "TypeScript", level: 90, match: true },
   { name: "Node.js", level: 85, match: true },
   { name: "GraphQL", level: 80, match: false },
-  { name: "Webpack", level: 75, match: true },
-  { name: "Jest", level: 70, match: false },
+  { name: "Next.js", level: 92, match: true },
+  { name: "Tailwind", level: 88, match: true },
   { name: "Docker", level: 65, match: true },
-  { name: "AWS", level: 60, match: false },
-  { name: "Python", level: 55, match: true },
-  { name: "MongoDB", level: 50, match: false },
 ];
 
-export default function SkillCloud() {
+const SkillCloud = memo(function SkillCloud() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
       gsap.from(".skill-item", {
-        scale: 0,
+        scale: 0.8,
         opacity: 0,
-        duration: 0.5,
-        stagger: 0.03,
-        ease: "back.out(1.2)",
+        duration: 0.4,
+        stagger: 0.05,
+        ease: "power2.out",
       });
     }, containerRef);
 
@@ -35,29 +40,44 @@ export default function SkillCloud() {
   }, []);
 
   return (
-    <div ref={containerRef} className="flex flex-wrap gap-2">
-      {skills.map((skill, i) => (
-        <div
-          key={i}
-          className="skill-item group relative cursor-pointer"
-          style={{
-            fontSize: `${Math.max(0.7, skill.level / 100)}rem`,
-          }}
-        >
-          <span
-            className={`px-2 py-1 rounded-md transition-all duration-200 ${
-              skill.match
-                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
-            }`}
-          >
-            {skill.name}
-          </span>
-          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-zinc-800 text-xs text-zinc-300 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-zinc-700">
-            {skill.level}% proficiency
-          </div>
-        </div>
+    <div 
+      ref={containerRef} 
+      className="flex flex-wrap gap-1.5"
+      role="list"
+      aria-label="Technical skills"
+    >
+      {SKILLS.map((skill, index) => (
+        <SkillItem key={`${skill.name}-${index}`} skill={skill} />
       ))}
     </div>
   );
+});
+
+function SkillItem({ skill }: { skill: Skill, key?: React.Key }) {
+  return (
+    <div
+      className="skill-item group relative"
+      role="listitem"
+    >
+      <span
+        className={`
+          px-2.5 py-1 rounded-md text-[11px] font-medium transition-all duration-200 inline-block border
+          ${skill.match 
+            ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-500" 
+            : "bg-zinc-50/50 dark:bg-zinc-900/50 text-zinc-400 dark:text-zinc-500 border-zinc-100 dark:border-zinc-800 italic"
+          }
+        `}
+      >
+        {skill.name}
+      </span>
+      
+      <div
+        className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-zinc-900 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-20"
+      >
+        {skill.level}% proficiency
+      </div>
+    </div>
+  );
 }
+
+export default SkillCloud;

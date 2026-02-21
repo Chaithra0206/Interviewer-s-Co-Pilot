@@ -1,79 +1,94 @@
-// components/CommitSentiment.tsx
-import { GitBranch, TrendingUp, TrendingDown, AlertCircle } from "lucide-react";
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import React from "react";
+import { GitBranch, TrendingUp, TrendingDown, AlertCircle, CheckCircle, Minus } from "lucide-react";
+
+type SentimentType = 'positive' | 'neutral' | 'negative';
+type TrendType = 'up' | 'down' | 'stable';
+
+interface Repository {
+  name: string;
+  commits: number;
+  sentiment: SentimentType;
+  quality: number;
+  trend: TrendType;
+}
+
+const REPOSITORIES: Repository[] = [
+  {
+    name: "architectural-scout-ui",
+    commits: 142,
+    sentiment: "positive",
+    quality: 96,
+    trend: "up",
+  },
+  {
+    name: "core-engine-api",
+    commits: 89,
+    sentiment: "positive",
+    quality: 92,
+    trend: "up",
+  },
+  {
+    name: "legacy-auth-service",
+    commits: 24,
+    sentiment: "neutral",
+    quality: 68,
+    trend: "down",
+  },
+];
 
 export default function CommitSentiment() {
-  const repos = [
-    {
-      name: "frontend-app",
-      commits: 234,
-      sentiment: "positive",
-      quality: 95,
-      trend: "up",
-    },
-    {
-      name: "api-service",
-      commits: 156,
-      sentiment: "positive",
-      quality: 88,
-      trend: "up",
-    },
-    {
-      name: "legacy-system",
-      commits: 45,
-      sentiment: "neutral",
-      quality: 65,
-      trend: "down",
-    },
-  ];
-
   return (
-    <div className="space-y-3">
-      <h3 className="text-xs font-medium text-zinc-400 uppercase tracking-wider flex items-center gap-1">
+    <section className="space-y-3">
+      <h3 className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.1em] flex items-center gap-1.5">
         <GitBranch className="w-3 h-3" />
-        Commit Sentiment
+        <span>Commit Sentiment</span>
       </h3>
+      
       <div className="space-y-2">
-        {repos.map((repo, i) => (
-          <div key={i} className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700/30">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">{repo.name}</span>
-              <div className="flex items-center gap-1">
-                {repo.trend === "up" ? (
-                  <TrendingUp className="w-3 h-3 text-emerald-400" />
-                ) : (
-                  <TrendingDown className="w-3 h-3 text-amber-400" />
-                )}
-                <span
-                  className={`text-xs px-1.5 py-0.5 rounded ${
-                    repo.sentiment === "positive"
-                      ? "bg-emerald-500/20 text-emerald-400"
-                      : "bg-amber-500/20 text-amber-400"
-                  }`}
-                >
-                  {repo.sentiment}
-                </span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between text-xs text-zinc-400">
-              <span>{repo.commits} commits</span>
-              <div className="flex items-center gap-1">
-                <span>Quality: {repo.quality}%</span>
-                {repo.quality < 70 && (
-                  <AlertCircle className="w-3 h-3 text-amber-400" />
-                )}
-              </div>
-            </div>
-            <div className="mt-2 h-1 bg-zinc-700 rounded-full overflow-hidden">
-              <div
-                className={`h-full ${
-                  repo.quality > 80 ? "bg-emerald-500" : "bg-amber-500"
-                }`}
-                style={{ width: `${repo.quality}%` }}
-              />
-            </div>
-          </div>
+        {REPOSITORIES.map((repo, index) => (
+          <RepositoryCard key={`${repo.name}-${index}`} repository={repo} />
         ))}
       </div>
-    </div>
+    </section>
+  );
+}
+
+function RepositoryCard({ repository }: { repository: Repository, key?: React.Key }) {
+  const { name, commits, sentiment, quality, trend } = repository;
+  
+  return (
+    <article className="bg-white dark:bg-zinc-900/50 rounded-xl p-3 border border-zinc-200/60 dark:border-zinc-800/60 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-300 group">
+      <div className="flex items-center justify-between mb-2">
+        <h4 className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 truncate pr-2">{name}</h4>
+        <div className="flex items-center gap-1.5">
+          {trend === 'up' ? <TrendingUp className="w-3 h-3 text-emerald-500" /> : <TrendingDown className="w-3 h-3 text-zinc-400" />}
+          <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider border ${
+            sentiment === 'positive' ? 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' : 'bg-zinc-50 text-zinc-500 border-zinc-100 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700'
+          }`}>
+            {sentiment}
+          </span>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between text-[10px] text-zinc-500 dark:text-zinc-400">
+        <span>{commits} commits</span>
+        <div className="flex items-center gap-1">
+          <span className="font-medium text-zinc-900 dark:text-zinc-100">{quality}%</span>
+          {quality > 90 ? <CheckCircle className="w-3 h-3 text-emerald-500" /> : <AlertCircle className="w-3 h-3 text-amber-500" />}
+        </div>
+      </div>
+
+      <div className="mt-2.5 h-1 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+        <div
+          className={`h-full transition-all duration-1000 ease-out ${quality > 90 ? 'bg-zinc-900 dark:bg-zinc-100' : 'bg-zinc-400 dark:bg-zinc-600'}`}
+          style={{ width: `${quality}%` }}
+        />
+      </div>
+    </article>
   );
 }

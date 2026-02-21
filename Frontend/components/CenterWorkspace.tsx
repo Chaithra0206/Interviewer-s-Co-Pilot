@@ -1,101 +1,122 @@
-// components/CenterWorkspace.tsx
-"use client";
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Code2, Monitor, Play, Terminal } from "lucide-react";
-import MonacoEditor from "@/components/MonacoEditor";
+import { motion, AnimatePresence } from "motion/react";
+import { Code2, Monitor, Play, Terminal, Settings, ChevronRight } from "lucide-react";
+import MonacoEditor from "./MonacoEditor";
 
 export default function CenterWorkspace() {
   const [activeTab, setActiveTab] = useState<"compiler" | "screen">("compiler");
-  const [output, setOutput] = useState<string>("// Console output will appear here\n> Ready to run code...");
+  const [output, setOutput] = useState<string>("> System initialized. Ready for evaluation.");
 
   const handleRunCode = () => {
-    setOutput("> Running code...\n> Hello, World!\n> Execution completed in 0.23s");
+    setOutput("> Compiling...\n> Running test cases...\n> [PASS] Test Case 1: Basic LRU operations\n> [PASS] Test Case 2: Capacity eviction\n> [PASS] Test Case 3: Key update refresh\n> All tests passed (0.12s)");
   };
 
   return (
-    <div className="h-full flex flex-col bg-zinc-900/50 backdrop-blur-sm rounded-2xl border border-zinc-800/50 overflow-hidden">
-      {/* Tab Bar */}
-      <div className="flex items-center gap-1 p-2 border-b border-zinc-800/50">
-        <button
-          onClick={() => setActiveTab("compiler")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-            activeTab === "compiler"
-              ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
-              : "text-zinc-400 hover:text-zinc-300 hover:bg-zinc-800/50"
-          }`}
-        >
-          <Code2 className="w-4 h-4" />
-          <span className="text-sm font-medium">Compiler</span>
-        </button>
-        <button
-          onClick={() => setActiveTab("screen")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-            activeTab === "screen"
-              ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
-              : "text-zinc-400 hover:text-zinc-300 hover:bg-zinc-800/50"
-          }`}
-        >
-          <Monitor className="w-4 h-4" />
-          <span className="text-sm font-medium">Screen Share</span>
-        </button>
+    <div className="h-full flex flex-col bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm">
+      {/* Header / Tabs */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setActiveTab("compiler")}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all text-xs font-bold uppercase tracking-wider ${
+              activeTab === "compiler"
+                ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900"
+                : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+            }`}
+          >
+            <Code2 className="w-3.5 h-3.5" />
+            Compiler
+          </button>
+          <button
+            onClick={() => setActiveTab("screen")}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all text-xs font-bold uppercase tracking-wider ${
+              activeTab === "screen"
+                ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900"
+                : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+            }`}
+          >
+            <Monitor className="w-3.5 h-3.5" />
+            Screen
+          </button>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            Syncing
+          </div>
+          <button className="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors">
+            <Settings className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
-      {/* Content Area */}
-      <div className="flex-1 min-h-0 p-4">
+      {/* Content */}
+      <div className="flex-1 min-h-0 relative">
         <AnimatePresence mode="wait">
           {activeTab === "compiler" ? (
             <motion.div
               key="compiler"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.2 }}
-              className="h-full flex flex-col gap-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="h-full flex flex-col"
             >
-              {/* Editor */}
-              <div className="flex-1 rounded-lg overflow-hidden border border-zinc-800/50">
+              <div className="flex-1 min-h-0">
                 <MonacoEditor />
               </div>
 
-              {/* Controls & Output */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
+              {/* Console / Controls */}
+              <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+                    <Terminal className="w-3 h-3" />
+                    Terminal Output
+                  </div>
                   <button
                     onClick={handleRunCode}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors text-sm font-medium"
+                    className="flex items-center gap-2 px-4 py-1.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-opacity"
                   >
-                    <Play className="w-4 h-4" />
-                    Run Code
+                    <Play className="w-3 h-3 fill-current" />
+                    Run Tests
                   </button>
                 </div>
-
-                {/* Output Console */}
-                <div className="bg-zinc-950/50 rounded-lg border border-zinc-800/50 p-3">
-                  <div className="flex items-center gap-2 mb-2 text-xs text-zinc-400">
-                    <Terminal className="w-3 h-3" />
-                    <span>Console Output</span>
-                  </div>
-                  <pre className="font-mono text-xs text-zinc-300 whitespace-pre-wrap">
-                    {output}
-                  </pre>
+                <div className="bg-zinc-900 dark:bg-zinc-950 rounded-xl p-4 font-mono text-[11px] text-zinc-300 border border-zinc-800/50 shadow-inner h-32 overflow-y-auto scrollbar-thin">
+                  {output.split('\n').map((line, i) => (
+                    <div key={i} className="flex gap-3 mb-1">
+                      <span className="text-zinc-600 select-none">{i + 1}</span>
+                      <span className={line.includes('[PASS]') ? 'text-emerald-400' : ''}>{line}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </motion.div>
           ) : (
             <motion.div
               key="screen"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.2 }}
-              className="h-full flex items-center justify-center bg-zinc-950/50 rounded-lg border border-zinc-800/50"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="h-full flex items-center justify-center bg-zinc-50 dark:bg-zinc-950"
             >
-              <div className="text-center">
-                <Monitor className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
-                <p className="text-zinc-400 text-sm">Candidate's screen share will appear here</p>
-                <p className="text-xs text-zinc-600 mt-1">Waiting for candidate to start sharing...</p>
+              <div className="text-center space-y-4 max-w-xs">
+                <div className="w-16 h-16 rounded-3xl bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center mx-auto border border-zinc-200 dark:border-zinc-800">
+                  <Monitor className="w-8 h-8 text-zinc-300" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">Waiting for Screen Share</h4>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 leading-relaxed">
+                    The candidate hasn't started sharing their screen yet. You'll be notified when the stream begins.
+                  </p>
+                </div>
+                <button className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1 mx-auto hover:gap-2 transition-all">
+                  Request Access <ChevronRight className="w-3 h-3" />
+                </button>
               </div>
             </motion.div>
           )}

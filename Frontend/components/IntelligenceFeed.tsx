@@ -1,117 +1,115 @@
-// components/IntelligenceFeed.tsx
-"use client";
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
-import { Zap, AlertCircle, CheckCircle, Brain, Clock } from "lucide-react";
+import { Brain, Clock, Zap, AlertTriangle, Target, Sparkles } from "lucide-react";
 
-const observations = [
+type ObservationType = "insight" | "warning" | "match";
+
+interface Observation {
+  id: number;
+  type: ObservationType;
+  message: string;
+  action: string;
+  timestamp: string;
+}
+
+const OBSERVATIONS: Observation[] = [
   {
     id: 1,
     type: "insight",
-    icon: Brain,
-    color: "blue",
-    message: "Candidate is using a Hash Map approach - matches their LeetCode pattern history",
-    action: "Suggest asking about time complexity O(n) vs O(n²)",
-    timestamp: "Just now",
+    message: "Candidate is optimizing for space complexity using a single-pass Map approach.",
+    action: "Ask about trade-offs vs Array.indexOf",
+    timestamp: "NOW",
   },
   {
     id: 2,
     type: "match",
-    icon: CheckCircle,
-    color: "emerald",
-    message: "React hooks usage pattern matches their 5 years of React experience",
-    action: "Deep dive into custom hooks implementation",
-    timestamp: "2m ago",
+    message: "Code style perfectly aligns with Vercel's internal engineering standards.",
+    action: "High cultural fit indicator",
+    timestamp: "2M AGO",
   },
   {
     id: 3,
     type: "warning",
-    icon: AlertCircle,
-    color: "amber",
-    message: "Contradiction: Resume mentions GraphQL expertise but struggling with schema design",
-    action: "Ask about specific GraphQL projects",
-    timestamp: "5m ago",
+    message: "Potential gap: Resume claims 4 years of Rust, but struggling with basic ownership concepts.",
+    action: "Deep dive into memory management",
+    timestamp: "5M AGO",
   },
   {
     id: 4,
     type: "insight",
-    icon: Zap,
-    color: "blue",
-    message: "Using modern ES6+ features - aligns with senior level expectation",
-    action: "Good sign for frontend role",
-    timestamp: "8m ago",
+    message: "Using modern ES2024 features (Map.groupBy) - shows continuous learning.",
+    action: "Positive technical signal",
+    timestamp: "8M AGO",
   },
 ];
 
 export default function IntelligenceFeed() {
-  const [items] = useState(observations);
   const feedRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      gsap.from(".observation-item", {
-        x: 20,
+      gsap.from(".feed-item", {
+        y: 20,
         opacity: 0,
-        duration: 0.4,
+        duration: 0.5,
         stagger: 0.1,
-        ease: "power2.out",
+        ease: "power3.out",
       });
     }, feedRef);
 
     return () => ctx.revert();
   }, []);
 
-  const getColorClasses = (color: string) => {
-    const colors = {
-      blue: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-      emerald: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-      amber: "bg-amber-500/20 text-amber-400 border-amber-500/30",
-    };
-    return colors[color as keyof typeof colors] || colors.blue;
-  };
-
   return (
-    <div className="flex-1 bg-zinc-900/50 backdrop-blur-sm rounded-2xl border border-zinc-800/50 p-4 overflow-hidden flex flex-col">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-medium flex items-center gap-2">
-          <Brain className="w-4 h-4 text-blue-400" />
-          AI Intelligence Feed
-        </h3>
-        <span className="text-xs text-zinc-500 flex items-center gap-1">
+    <section className="flex-1 flex flex-col bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm">
+      <div className="px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-900/50">
+        <div className="flex items-center gap-2">
+          <Brain className="w-4 h-4 text-zinc-900 dark:text-zinc-100" />
+          <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-900 dark:text-zinc-100">AI Intelligence</h3>
+        </div>
+        <div className="flex items-center gap-1.5 text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
           <Clock className="w-3 h-3" />
-          Live
-        </span>
+          Live Feed
+        </div>
       </div>
 
-      <div ref={feedRef} className="flex-1 overflow-y-auto space-y-3 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-transparent pr-2">
-        {items.map((item) => {
-          const Icon = item.icon;
-          return (
-            <div
-              key={item.id}
-              className="observation-item bg-zinc-800/30 rounded-lg p-3 border border-zinc-700/30 hover:border-zinc-700/50 transition-colors"
-            >
-              <div className="flex items-start gap-2">
-                <div className={`p-1.5 rounded-lg ${getColorClasses(item.color)}`}>
-                  <Icon className="w-3 h-3" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-zinc-300 leading-relaxed">
-                    {item.message}
-                  </p>
-                  <div className="flex items-center justify-between mt-2">
-                    <span className="text-xs text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded">
-                      {item.action}
-                    </span>
-                    <span className="text-xs text-zinc-500">{item.timestamp}</span>
+      <div ref={feedRef} className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-none">
+        {OBSERVATIONS.map((obs) => (
+          <article key={obs.id} className="feed-item group">
+            <div className="flex gap-3">
+              <div className="mt-1">
+                {obs.type === 'insight' && <Sparkles className="w-3.5 h-3.5 text-zinc-400" />}
+                {obs.type === 'match' && <Target className="w-3.5 h-3.5 text-emerald-500" />}
+                {obs.type === 'warning' && <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />}
+              </div>
+              <div className="flex-1 space-y-2">
+                <p className="text-[11px] leading-relaxed text-zinc-600 dark:text-zinc-400 font-medium">
+                  {obs.message}
+                </p>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700">
+                    <Zap className="w-2.5 h-2.5 text-zinc-900 dark:text-zinc-100" />
+                    <span className="text-[9px] font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">{obs.action}</span>
                   </div>
+                  <span className="text-[9px] font-bold text-zinc-300 dark:text-zinc-600 uppercase">{obs.timestamp}</span>
                 </div>
               </div>
             </div>
-          );
-        })}
+            <div className="mt-3 h-px bg-zinc-100 dark:bg-zinc-800 group-last:hidden" />
+          </article>
+        ))}
       </div>
-    </div>
+      
+      <div className="p-3 bg-zinc-50 dark:bg-zinc-900/50 border-t border-zinc-200 dark:border-zinc-800">
+        <button className="w-full py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 text-[10px] font-bold uppercase tracking-widest text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">
+          View Full Analysis
+        </button>
+      </div>
+    </section>
   );
 }

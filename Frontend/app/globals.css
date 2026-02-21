@@ -5,17 +5,30 @@
 
 @layer base {
   :root {
-    --background: 240 10% 3.9%;
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+  }
+
+  .dark {
+    --background: 0 0% 3.9%;
     --foreground: 0 0% 98%;
   }
 
   * {
+    @apply border-zinc-200;
+  }
+
+  .dark * {
     @apply border-zinc-800;
   }
 
   body {
-    @apply bg-zinc-950 text-zinc-50;
+    @apply bg-white text-zinc-900;
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  .dark body {
+    @apply bg-zinc-950 text-zinc-50;
   }
 }
 
@@ -30,12 +43,29 @@
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: #3f3f46;
+    background: #d4d4d8;
     border-radius: 20px;
   }
 
+  .dark .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #3f3f46;
+  }
+
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: #a1a1aa;
+  }
+
+  .dark .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background: #52525b;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }
 
