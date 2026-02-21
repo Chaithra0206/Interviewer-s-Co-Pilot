@@ -121,11 +121,13 @@ async def scrape_leetcode_profile(username: str) -> dict[str, Any]:
 
     # ── Step 2b: ALWAYS fetch recent solved via GraphQL ────────────────
     # (Crawl4AI rarely extracts these from the JS-heavy profile page)
-    if not recent_solved:
+    if True: # Always refresh history to ensure uniqueness
         print(f"[leetcode-crawl4ai] Fetching recent solved via GraphQL for {username}", file=sys.stderr)
-        gql_recent = get_user_solved_problems(username, limit=5)
+        gql_recent = get_user_solved_problems(username, limit=50)
         if not gql_recent.get("error"):
-            for prob in gql_recent.get("solvedProblems", [])[:5]:
+            # Clear any partial list and use the full history
+            recent_solved = [] 
+            for prob in gql_recent.get("solvedProblems", []):
                 recent_solved.append({
                     "title": prob.get("title", "Unknown"),
                     "slug": prob.get("titleSlug", ""),

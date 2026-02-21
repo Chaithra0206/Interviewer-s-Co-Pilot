@@ -86,6 +86,7 @@ GRAPHQL_CLONE_QUERY = """
 query getQuestionCloneData($titleSlug: String!) {
   question(titleSlug: $titleSlug) {
     content
+    similarQuestions
     exampleTestcases
     hints
     topicTags {
@@ -335,11 +336,19 @@ def get_clone_data(title_slug: str) -> Dict[str, Any]:
         else:
             clean_content = ""
 
+        # Parse similar questions (stringified JSON)
+        similar_str = question.get("similarQuestions", "[]")
+        try:
+            similar_list = json.loads(similar_str)
+        except json.JSONDecodeError:
+            similar_list = []
+
         result = {
             "titleSlug": title_slug,
             "content": clean_content,
             "topicTags": [tag.get("name") for tag in question.get("topicTags", [])],
             "hints": question.get("hints", []),
+            "similarQuestions": similar_list,
             "sampleTestCase": question.get("exampleTestcases", ""),
             "codeSnippets": question.get("codeSnippets", [])
         }

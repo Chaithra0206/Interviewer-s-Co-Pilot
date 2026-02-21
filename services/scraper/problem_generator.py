@@ -51,10 +51,13 @@ def generate_similar_problem(
     4. Return the generated problem with description, examples, and starter code
     """
 
-    # ── Step 1: Collect topic tags from recent problems ────────────────
+    # ── Step 1: Collect topic tags and similar problems from history ──
     all_tags: list[str] = []
     problem_names: list[str] = []
+    solved_slugs: set[str] = {prob.get("slug") for prob in recent_solved if prob.get("slug")}
+    collected_similar: list[dict[str, str]] = []
 
+    # Look at the last 5 solved problems to find similar ones
     for prob in recent_solved[:5]:
         slug = prob.get("slug", "")
         title = prob.get("title", "")
@@ -64,15 +67,29 @@ def generate_similar_problem(
         if slug:
             clone = get_clone_data(slug)
             if not clone.get("error"):
+                # Collect tags
                 tags = clone.get("topicTags", [])
                 all_tags.extend(tags)
+                
+                # Collect real similar problems from LeetCode
+                sims = clone.get("similarQuestions") or []
+                for s in sims:
+                    sim_slug = s.get("titleSlug")
+                    if isinstance(s, dict) and sim_slug:
+                        # ONLY collect it if the user HAS NOT solved it
+                        if sim_slug not in solved_slugs:
+                            collected_similar.append({
+                                "title": s.get("title", ""),
+                                "slug": sim_slug,
+                                "based_on": title
+                            })
 
     # Deduplicate tags while preserving order
-    seen = set()
+    seen_tags = set()
     unique_tags = []
     for tag in all_tags:
-        if tag not in seen:
-            seen.add(tag)
+        if tag not in seen_tags:
+            seen_tags.add(tag)
             unique_tags.append(tag)
 
     # Determine candidate's primary language
@@ -107,7 +124,7 @@ def generate_similar_problem(
     prompt = f"""You are a coding interview problem designer. Based on the candidate's LeetCode profile, generate a NEW original coding problem that tests similar concepts.
 
 **Candidate Profile:**
-- Recently solved: {', '.join(problem_names) if problem_names else 'Unknown'}
+- Recently solved (PROHIBITED LIST - DO NOT REPEAT): {', '.join(problem_names) if problem_names else 'Unknown'}
 - Topic areas: {', '.join(unique_tags) if unique_tags else 'Arrays, Strings, Hash Tables'}
 - Total solved: {total} (Easy: {stats.get('easy', 0)}, Medium: {stats.get('medium', 0)}, Hard: {stats.get('hard', 0)})
 - Primary language: {primary_lang}
@@ -115,11 +132,12 @@ def generate_similar_problem(
 
 **Requirements:**
 1. Create a COMPLETELY NEW problem (not an existing LeetCode problem)
-2. It should test concepts from their topic areas
-3. The difficulty should match their skill level ({target_difficulty})
-4. Include 2-3 examples with input/output
-5. Include constraints
-6. Provide starter code in {primary_lang}
+2. DO NOT use the same titles or identical logic as the 'Recently solved' list
+3. It should test concepts from their topic areas but from a fresh perspective
+4. The difficulty should match their skill level ({target_difficulty})
+5. Include 2-3 examples with input/output
+6. Include constraints
+7. Provide starter code in {primary_lang}
 
 **Respond in this EXACT JSON format (no markdown, pure JSON):**
 {{
@@ -146,7 +164,7 @@ def generate_similar_problem(
     api_key = os.environ.get("OPENAI_API_KEY", "")
     if not api_key:
         print("[problem-gen] No OPENAI_API_KEY found, using fallback", file=sys.stderr)
-        return _fallback_problem(unique_tags, target_difficulty, primary_lang, problem_names)
+        return _fallback_problem(unique_tags, target_difficulty, primary_lang, problem_names, collected_similar)
 
     try:
         response = requests.post(
@@ -183,7 +201,7 @@ def generate_similar_problem(
 
     except Exception as e:
         print(f"[problem-gen] LLM call failed: {e}", file=sys.stderr)
-        return _fallback_problem(unique_tags, target_difficulty, primary_lang, problem_names)
+        return _fallback_problem(unique_tags, target_difficulty, primary_lang, problem_names, collected_similar)
 
 
 def _fallback_problem(
@@ -191,13 +209,78 @@ def _fallback_problem(
     difficulty: str,
     lang: str,
     problem_names: list[str],
+    similar_questions: list[dict[str, str]] = None,
+    solved_slugs: set[str] = None,
 ) -> dict[str, Any]:
     """
-    Return a real coding problem from a curated bank, matched to the
-    candidate's topic tags. Each problem is a proper LeetCode-style
-    question with description, examples, constraints, and starter code.
+    Fallback problem if the LLM is unavailable.
+    
+    Priority:
+    1. Try to fetch one of the 'Similar Questions' collected from the candidate's history
+    2. Fall back to the curated problem bank matched by topic tags
     """
+    
+    # ── Option 1: Try real 'Similar Questions' from LeetCode ───────────
+    if similar_questions:
+        print(f"[problem-gen] Attempting to fetch a real similar question ({len(similar_questions)} candidates)", file=sys.stderr)
+        # Try up to 5 similar questions until we find one that has content (not premium)
+        for sim in similar_questions[:5]:
+            slug = sim.get("slug")
+            if not slug: continue
+            
+            clone = get_clone_data(slug)
+            if not clone.get("error") and clone.get("content"):
+                print(f"[problem-gen] Success! Using real similar question: {sim.get('title')}", file=sys.stderr)
+                
+                # Filter code snippets
+                raw_snippets = clone.get("codeSnippets") or []
+                lang_slug_map = {
+                    "Python": "python3", "JavaScript": "javascript", "TypeScript": "typescript",
+                    "Java": "java", "C++": "cpp", "Go": "go", "Rust": "rust"
+                }
+                target_lang_slug = lang_slug_map.get(lang, "python3")
+                
+                starter = None
+                for s in raw_snippets:
+                    if s.get("langSlug") == target_lang_slug:
+                        starter = s.get("code")
+                        break
+                
+                # Fallback starter if target lang not found
+                if not starter and raw_snippets:
+                    starter = raw_snippets[0].get("code")
+                
+                # Format examples if they are in the sampleTestCase string
+                examples = []
+                raw_testcases = clone.get("sampleTestCase", "")
+                if raw_testcases:
+                    examples.append({
+                        "input": raw_testcases,
+                        "output": "See problem description for expected output",
+                        "explanation": "Extracted from LeetCode sample test cases"
+                    })
+
+                return {
+                    "title": sim.get("title", ""),
+                    "difficulty": difficulty,  # Keep target difficulty or could fetch real
+                    "description": clone.get("content", ""),
+                    "examples": examples,
+                    "constraints": [], # Included in content
+                    "topicTags": clone.get("topicTags", []),
+                    "starterCode": {
+                        "language": lang,
+                        "code": starter or ""
+                    },
+                    "hints": clone.get("hints", []),
+                    "_source": "leetcode_similar_extraction",
+                    "_based_on": [sim.get("based_on", "")],
+                    "_topics_used": tags[:5]
+                }
+    
+    # ── Option 2: Curated Problem Bank (Original Fallback) ────────────
+    print("[problem-gen] Using curated bank fallback", file=sys.stderr)
     tag_set = {t.lower() for t in tags}
+
 
     # ── Problem Bank ──────────────────────────────────────────────────
     PROBLEMS = [
