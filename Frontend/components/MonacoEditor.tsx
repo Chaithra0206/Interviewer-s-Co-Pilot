@@ -17,10 +17,7 @@ interface MonacoEditorProps {
 }
 
 const DEFAULT_CODE: Record<SupportedLanguage, string> = {
-  typescript: `/**
- * Architectural Scout - Technical Assessment
- * Problem: Two Sum
- */
+  typescript: `
 
 function twoSum(nums: number[], target: number): number[] {
   for (let i = 0; i < nums.length; i++) {
@@ -40,10 +37,7 @@ console.log(result); // [0, 1]
 const result2 = twoSum([3, 2, 4], 6);
 console.log(result2); // [1, 2]
 `,
-  javascript: `/**
- * Architectural Scout - Technical Assessment
- * Problem: LRU Cache Implementation
- */
+  javascript: `
 
 class LRUCache {
   constructor(capacity) {
@@ -76,11 +70,7 @@ lru.put(1, 1);
 lru.put(2, 2);
 console.log(lru.get(1)); // 1
 `,
-  python: `"""
-Architectural Scout - Technical Assessment
-Problem: LRU Cache Implementation
-"""
-
+  python: `
 from collections import OrderedDict
 
 class LRUCache:
@@ -109,11 +99,7 @@ print(lru.get(1))  # 1
 lru.put(3, 3)      # evicts key 2
 print(lru.get(2))  # -1
 `,
-  java: `/**
- * Architectural Scout - Technical Assessment
- * Problem: LRU Cache Implementation
- */
-
+  java: `
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -148,10 +134,7 @@ class LRUCache extends LinkedHashMap<Integer, Integer> {
     }
 }
 `,
-  cpp: `/**
- * Architectural Scout - Technical Assessment
- * Problem: LRU Cache Implementation
- */
+  cpp: `
 
 #include <unordered_map>
 #include <list>
@@ -231,10 +214,7 @@ int main() {
     return 0;
 }
 `,
-  go: `/**
- * Architectural Scout - Technical Assessment
- * Problem: LRU Cache Implementation
- */
+  go: `
 
 package main
 
@@ -293,10 +273,7 @@ func main() {
     fmt.Println(lru.Get(2)) // -1
 }
 `,
-  rust: `/**
- * Architectural Scout - Technical Assessment
- * Problem: LRU Cache Implementation
- */
+  rust: `
 
 use std::collections::HashMap;
 
