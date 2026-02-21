@@ -1,28 +1,24 @@
 'use server';
 
 import { generateText } from 'ai';
-import { model, CandidateContext, getInitialContext } from '../lib/ai-orchestrator';
-import { analyzeCodebase, SCOUT_PROMPT } from '../lib/tools/github-analyzer';
+import { model, CandidateContext, getInitialContext } from '@/lib/ai-orchestrator';
+import { analyzeCodebase, SCOUT_PROMPT } from '@/lib/ai/tools';
 
 export async function auditCandidate(
   resumeContext: CandidateContext['resume'],
   githubUrl: string,
-  githubMarkdownContent: string
+  githubMarkdownContent: string,
+  jobDescription: string
 ): Promise<CandidateContext & { interviewQuestions: string[] }> {
   // We include the markdown content as a parameter since the action itself shouldn't 
   // be doing the crawling, it gets passed in.
 
   const systemPrompt = `
     ${SCOUT_PROMPT}
-    
-    You are an expert technical interviewer and architect. 
-    Your goal is to compare the provided Resume with the findings from the analyzeCodebase tool.
-    
-    Instructions:
-    1. Identify gaps: If the resume says "Expert" but the code is "Basic", flag it.
-    2. Identify contradictions: If the resume claims a skill not found in any project, mark it as a "Validation Required" topic.
-    3. Generate specific interview questions based on these gaps and contradictions.
-    
+
+    Instruction Additions:
+    - You MUST use the analyzeCodebase tool to extract jdMatchScore and signatureMatch based on the Job Description.
+
     Return your findings in a structured format:
     - discrepancies: Array of strings identifying lies, gaps or contradictions.
     - interviewQuestions: Array of strings with specific technical questions to pressure-test the candidate on the identified gaps.
@@ -34,7 +30,10 @@ export async function auditCandidate(
     
     GitHub Repository URL: ${githubUrl}
     
-    Please analyze the repository using the provided tool and compare it with the resume.
+    Job Description:
+    ${jobDescription}
+    
+    Please analyze the repository using the provided tool and compare it with the resume and job description.
   `;
 
   // We are using generateText from ai-sdk
@@ -51,19 +50,27 @@ export async function auditCandidate(
   // In a real application, you would use generateObject for structured output, 
   // but for this example, we'll extract the data from the text response or 
   // assume the model returns it in a parseable format if we asked for JSON.
-  
+
   // For robustness, let's use generateObject if we want typed output, 
   // but sticking to generateText as requested:
-  
+
   // We'll initialize a context
   const context = getInitialContext();
   context.resume = resumeContext;
-  
+
   // Extract github data from tool results
   if (toolResults && toolResults.length > 0) {
     const analysisResult = toolResults.find(r => r.toolName === 'analyzeCodebase');
     if (analysisResult && analysisResult.result) {
-        context.githubData.push(analysisResult.result as any);
+      const payload: any = analysisResult.result;
+      context.githubData.push(payload as any);
+
+      if (payload.jdMatchScore !== undefined) {
+        context.jdMatchScore = payload.jdMatchScore;
+      }
+      if (payload.signatureMatch) {
+        context.signatureMatch = payload.signatureMatch;
+      }
     }
   }
 
@@ -71,10 +78,10 @@ export async function auditCandidate(
   // In production, we strongly recommend using generateObject instead of generateText for this.
   const discrepancies: string[] = [];
   const interviewQuestions: string[] = [];
-  
+
   const lines = text.split('\n');
   let currentSection = '';
-  
+
   for (const line of lines) {
     const lowerLine = line.toLowerCase();
     if (lowerLine.includes('discrepanc') || lowerLine.includes('gap') || lowerLine.includes('contradiction')) {
@@ -84,7 +91,7 @@ export async function auditCandidate(
       currentSection = 'questions';
       continue;
     }
-    
+
     if (line.trim().startsWith('-') || line.trim().match(/^\d+\./)) {
       const cleanLine = line.replace(/^-\s*/, '').replace(/^\d+\.\s*/, '').trim();
       if (cleanLine) {

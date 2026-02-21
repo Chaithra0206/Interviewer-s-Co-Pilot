@@ -12,6 +12,8 @@ export interface CandidateContext {
     codeQuality: string;
   }>;
   discrepancies: string[];
+  jdMatchScore?: number;
+  signatureMatch?: string;
 }
 
 export const model = openai('gpt-4o');
@@ -25,5 +27,7 @@ export function getInitialContext(): CandidateContext {
     },
     githubData: [],
     discrepancies: [],
+    jdMatchScore: 0,
+    signatureMatch: '',
   };
 }

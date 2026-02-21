@@ -52,14 +52,14 @@ exports.auditCandidate = auditCandidate;
 var ai_1 = require("ai");
 var ai_orchestrator_1 = require("../lib/ai-orchestrator");
 var github_analyzer_1 = require("../lib/tools/github-analyzer");
-function auditCandidate(resumeContext, githubUrl, githubMarkdownContent) {
+function auditCandidate(resumeContext, githubUrl, githubMarkdownContent, jobDescription) {
     return __awaiter(this, void 0, void 0, function () {
-        var systemPrompt, userPrompt, _a, text, toolCalls, toolResults, context, analysisResult, discrepancies, interviewQuestions, lines, currentSection, _i, lines_1, line, lowerLine, cleanLine;
+        var systemPrompt, userPrompt, _a, text, toolCalls, toolResults, context, analysisResult, payload, discrepancies, interviewQuestions, lines, currentSection, _i, lines_1, line, lowerLine, cleanLine;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
-                    systemPrompt = "\n    ".concat(github_analyzer_1.SCOUT_PROMPT, "\n    \n    You are an expert technical interviewer and architect. \n    Your goal is to compare the provided Resume with the findings from the analyzeCodebase tool.\n    \n    Instructions:\n    1. Identify gaps: If the resume says \"Expert\" but the code is \"Basic\", flag it.\n    2. Identify contradictions: If the resume claims a skill not found in any project, mark it as a \"Validation Required\" topic.\n    3. Generate specific interview questions based on these gaps and contradictions.\n    \n    Return your findings in a structured format:\n    - discrepancies: Array of strings identifying lies, gaps or contradictions.\n    - interviewQuestions: Array of strings with specific technical questions to pressure-test the candidate on the identified gaps.\n  ");
-                    userPrompt = "\n    Candidate Resume:\n    ".concat(JSON.stringify(resumeContext, null, 2), "\n    \n    GitHub Repository URL: ").concat(githubUrl, "\n    \n    Please analyze the repository using the provided tool and compare it with the resume.\n  ");
+                    systemPrompt = "\n    ".concat(github_analyzer_1.SCOUT_PROMPT, "\n\n    Instruction Additions:\n    - You MUST use the analyzeCodebase tool to extract jdMatchScore and signatureMatch based on the Job Description.\n\n    Return your findings in a structured format:\n    - discrepancies: Array of strings identifying lies, gaps or contradictions.\n    - interviewQuestions: Array of strings with specific technical questions to pressure-test the candidate on the identified gaps.\n  ");
+                    userPrompt = "\n    Candidate Resume:\n    ".concat(JSON.stringify(resumeContext, null, 2), "\n    \n    GitHub Repository URL: ").concat(githubUrl, "\n    \n    Job Description:\n    ").concat(jobDescription, "\n    \n    Please analyze the repository using the provided tool and compare it with the resume and job description.\n  ");
                     return [4 /*yield*/, (0, ai_1.generateText)({
                             model: ai_orchestrator_1.model,
                             system: systemPrompt,
@@ -77,7 +77,14 @@ function auditCandidate(resumeContext, githubUrl, githubMarkdownContent) {
                     if (toolResults && toolResults.length > 0) {
                         analysisResult = toolResults.find(function (r) { return r.toolName === 'analyzeCodebase'; });
                         if (analysisResult && analysisResult.result) {
-                            context.githubData.push(analysisResult.result);
+                            payload = analysisResult.result;
+                            context.githubData.push(payload);
+                            if (payload.jdMatchScore !== undefined) {
+                                context.jdMatchScore = payload.jdMatchScore;
+                            }
+                            if (payload.signatureMatch) {
+                                context.signatureMatch = payload.signatureMatch;
+                            }
                         }
                     }
                     discrepancies = [];

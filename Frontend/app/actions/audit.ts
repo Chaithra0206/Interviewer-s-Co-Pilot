@@ -21,6 +21,7 @@ export async function auditCandidate(
   resumeData: CandidateContext['resume'],
   githubUrl: string,
   githubMarkdownContent: string,
+  jobDescription: string,
 ): Promise<Response> {
   const thoughtTrace: string[] = [];
   const maxSteps = 5;
@@ -43,10 +44,12 @@ export async function auditCandidate(
     stopWhen: stepCountIs(maxSteps),
     system: [
       SCOUT_PROMPT,
-      'You are an autonomous hiring panel with three roles: Scout, Analyst, Judge.',
-      'Run a multi-step process.',
+      'You are now a Triple-Threat Auditor. You must triangulate findings between the Resume, the GitHub Code, and the Job Description.',
+      'JD Alignment: Does the candidate write code that actually solves the specific problems in the JD? (e.g., If the JD asks for Scalable Microservices, but they only write Monoliths, penalize the score).',
+      'Technical Debt vs. JD: If the JD requires high-performance systems but the code is unoptimized, flag this as a critical risk.',
+      'Verdict: Your final recommendation must be based on the candidate\'s ability to perform the specific tasks in the JD, not just their general coding skill.',
       'Step 1 must call analyzeCodebase to extract technical evidence from repository markdown.',
-      'Step 2 must compare analyzeCodebase output against resumeData and identify contradictions or overstatements.',
+      'Step 2 must compare analyzeCodebase output against resumeData and jobDescription, identifying contradictions or overstatements.',
       'Then produce discrepancies, confidence notes, and high-pressure interview questions.',
       'Keep findings concrete and tied to observable code signals.',
     ].join(' '),
@@ -57,6 +60,9 @@ export async function auditCandidate(
       `GitHub URL: ${githubUrl}`,
       'Repository Markdown:',
       githubMarkdownContent,
+      '',
+      'Job Description:',
+      jobDescription,
     ].join('\n'),
     prepareStep: ({ steps }) => {
       if (steps.length === 0) {
