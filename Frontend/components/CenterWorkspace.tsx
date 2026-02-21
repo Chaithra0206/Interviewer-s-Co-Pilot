@@ -5,11 +5,12 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Code2, Monitor, Play, Terminal, Settings, ChevronRight } from "lucide-react";
-import MonacoEditor from "./MonacoEditor";
+import { Code2, Monitor, Play, Terminal, Settings, ChevronRight, ChevronDown } from "lucide-react";
+import MonacoEditor, { LANGUAGE_LABELS, type SupportedLanguage } from "./MonacoEditor";
 
 export default function CenterWorkspace() {
   const [activeTab, setActiveTab] = useState<"compiler" | "screen">("compiler");
+  const [language, setLanguage] = useState<SupportedLanguage>("typescript");
   const [output, setOutput] = useState<string>("> System initialized. Ready for evaluation.");
 
   const handleRunCode = () => {
@@ -23,36 +24,45 @@ export default function CenterWorkspace() {
         <div className="flex items-center gap-1">
           <button
             onClick={() => setActiveTab("compiler")}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all text-xs font-bold uppercase tracking-wider ${
-              activeTab === "compiler"
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all text-xs font-bold uppercase tracking-wider ${activeTab === "compiler"
                 ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900"
                 : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
-            }`}
+              }`}
           >
             <Code2 className="w-3.5 h-3.5" />
             Compiler
           </button>
           <button
             onClick={() => setActiveTab("screen")}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all text-xs font-bold uppercase tracking-wider ${
-              activeTab === "screen"
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all text-xs font-bold uppercase tracking-wider ${activeTab === "screen"
                 ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900"
                 : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
-            }`}
+              }`}
           >
             <Monitor className="w-3.5 h-3.5" />
             Screen
           </button>
         </div>
-        
+
         <div className="flex items-center gap-3">
+          {/* Language Selector */}
+          <div className="relative">
+            <select
+              value={language}
+              onChange={(e) => setLanguage(e.target.value as SupportedLanguage)}
+              className="appearance-none bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-xs font-bold uppercase tracking-wider rounded-lg pl-3 pr-8 py-1.5 cursor-pointer hover:border-zinc-400 dark:hover:border-zinc-500 transition-colors focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100"
+            >
+              {Object.entries(LANGUAGE_LABELS).map(([key, label]) => (
+                <option key={key} value={key}>{label}</option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400 pointer-events-none" />
+          </div>
+
           <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
             Syncing
           </div>
-          <button className="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors">
-            <Settings className="w-4 h-4" />
-          </button>
         </div>
       </div>
 
@@ -68,7 +78,7 @@ export default function CenterWorkspace() {
               className="h-full flex flex-col"
             >
               <div className="flex-1 min-h-0">
-                <MonacoEditor />
+                <MonacoEditor language={language} />
               </div>
 
               {/* Console / Controls */}
