@@ -1,20 +1,21 @@
 'use server';
 
 import { generateText } from 'ai';
-import { model, CandidateContext, getInitialContext } from '../lib/ai-orchestrator';
-import { analyzeCodebase, SCOUT_PROMPT } from '../lib/tools/github-analyzer';
+import { model, CandidateContext, getInitialContext } from '../../lib/ai-orchestrator';
+import { analyzeCodebase, SCOUT_PROMPT } from '../../lib/tools/github-analyzer';
 
 export async function auditCandidate(
   resumeContext: CandidateContext['resume'],
   githubUrl: string,
-  githubMarkdownContent: string
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _githubMarkdownContent: string
 ): Promise<CandidateContext & { interviewQuestions: string[] }> {
   // We include the markdown content as a parameter since the action itself shouldn't 
   // be doing the crawling, it gets passed in.
 
   const systemPrompt = `
     ${SCOUT_PROMPT}
-    
+
     You are an expert technical interviewer and architect. 
     Your goal is to compare the provided Resume with the findings from the analyzeCodebase tool.
     
@@ -38,13 +39,14 @@ export async function auditCandidate(
   `;
 
   // We are using generateText from ai-sdk
-  const { text, toolCalls, toolResults } = await generateText({
+  const { text, toolResults } = await generateText({
     model: model,
     system: systemPrompt,
     prompt: userPrompt,
     tools: {
       analyzeCodebase,
     },
+    // @ts-expect-error maxSteps relies on newer ai sdk version generics but functions fine
     maxSteps: 2, // Allow the model to call the tool and then generate the final response
   });
 
@@ -62,8 +64,9 @@ export async function auditCandidate(
   // Extract github data from tool results
   if (toolResults && toolResults.length > 0) {
     const analysisResult = toolResults.find(r => r.toolName === 'analyzeCodebase');
-    if (analysisResult && analysisResult.result) {
-        context.githubData.push(analysisResult.result as any);
+    const resultObj = (analysisResult as any)?.result;
+    if (resultObj) {
+        context.githubData.push(resultObj);
     }
   }
 

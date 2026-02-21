@@ -1,4 +1,5 @@
-import { openai } from '@ai-sdk/openai';
+import { model } from './ai/config';
+export { model };
 
 export interface CandidateContext {
   resume: {
@@ -13,8 +14,6 @@ export interface CandidateContext {
   }>;
   discrepancies: string[];
 }
-
-export const model = openai('gpt-4o');
 
 export function getInitialContext(): CandidateContext {
   return {

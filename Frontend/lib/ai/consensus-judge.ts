@@ -1,5 +1,6 @@
 import { generateObject } from 'ai';
 import { z } from 'zod';
+import { model } from '../ai-orchestrator';
 
 import type { CandidateContext } from '../ai-orchestrator';
 
@@ -26,7 +27,7 @@ export async function generateFinalVerdict(
   context: FullCandidateContext,
 ): Promise<FinalVerdict> {
   const { object } = await generateObject({
-    model: 'openai:gpt-4o-mini',
+    model: model,
     schema: finalVerdictSchema,
     system:
       "You are the Lead Hiring Committee Judge. Your goal is to reach a final Hire/No-Hire verdict. Compare the technical depth found in their GitHub repos with the honesty and clarity of their interview answers.",
