@@ -65,11 +65,24 @@ export default function Lobby({ onStartSession, onJoinSession }: LobbyProps) {
     setIsGenerating(true);
     try {
       const { url } = await createInterviewRoom();
-      setMeetingId(url);
+      const raw = (url || "").trim();
+      if (!raw) {
+        throw new Error("Daily API returned an empty room identifier.");
+      }
+
+      let roomSlug = raw;
+      try {
+        const parsed = new URL(raw);
+        roomSlug = parsed.pathname.split("/").filter(Boolean).at(-1) || raw;
+      } catch {
+        // raw is already a slug or non-absolute URL; keep as-is.
+      }
+
+      setMeetingId(roomSlug);
       setIsGenerated(true);
     } catch (err) {
       console.error("Failed to create room:", err);
-      alert("Failed to create room. Please check your DAILY_API_KEY.");
+      alert("Failed to create room. Please try again.");
     } finally {
       setIsGenerating(false);
     }

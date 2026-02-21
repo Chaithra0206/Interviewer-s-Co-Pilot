@@ -25,7 +25,7 @@ import MonacoEditor, { LANGUAGE_LABELS, DEFAULT_CODE, type SupportedLanguage } f
 import { motion, AnimatePresence } from "motion/react";
 import { useCodeSender } from "@/hooks/useCodeSync";
 import { executeCode, formatResult } from "@/lib/judge0";
-import { useJitsiController } from "@/lib/jitsi-controller";
+import VoicePeer from "@/components/interview/VoicePeer";
 
 interface CandidateDashboardProps {
     candidateName: string;
@@ -39,18 +39,12 @@ export default function CandidateDashboard({ candidateName, role, roomId, onExit
     const [code, setCode] = useState<string>(DEFAULT_CODE["typescript"]);
     const [output, setOutput] = useState<string>("> Environment ready. Good luck with your assessment.");
     const [isRunning, setIsRunning] = useState(false);
-
-    const {
-        JitsiNode,
-        connectionState,
-        isMicOn,
-        isCameraOn,
-        isScreenSharing,
-        toggleAudio,
-        toggleVideo,
-        toggleScreenShare,
-        leaveCall,
-    } = useJitsiController(roomId);
+    const [connectionState, setConnectionState] = useState<"idle" | "connecting" | "connected" | "disconnected" | "failed">("connecting");
+    const [isMicOn, setIsMicOn] = useState(true);
+    const [isCameraOn, setIsCameraOn] = useState(true);
+    const [isScreenSharing, setIsScreenSharing] = useState(false);
+    const [interviewerPeerIdInput, setInterviewerPeerIdInput] = useState("");
+    const [connectNowSignal, setConnectNowSignal] = useState(0);
 
     const { broadcastCode, broadcastLanguage } = useCodeSender();
     const containerRef = useRef<HTMLDivElement>(null);
@@ -84,20 +78,44 @@ export default function CandidateDashboard({ candidateName, role, roomId, onExit
             setOutput(formatResult(result));
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "Unknown error";
-            setOutput(`> ❌ Error: ${message}`);
+            setOutput(`> Error: ${message}`);
         } finally {
             setIsRunning(false);
         }
     };
 
     const handleHangUp = () => {
-        leaveCall();
         onExit();
     };
 
+    const handlePasteId = async () => {
+        try {
+            const text = await navigator.clipboard.readText();
+            if (text) {
+                setInterviewerPeerIdInput(text.trim());
+            }
+        } catch {
+            // clipboard read can fail without permission; ignore silently
+        }
+    };
+
+    const videoNode = (
+        <VoicePeer
+            mode="candidate"
+            initialInterviewerId=""
+            githubAuditContext={{ candidateName, role }}
+            micEnabled={isMicOn}
+            remotePeerId={interviewerPeerIdInput}
+            onRemotePeerIdChange={setInterviewerPeerIdInput}
+            connectNowSignal={connectNowSignal}
+            showInlineCandidateControls={false}
+            onConnectionStateChange={setConnectionState}
+        />
+    );
+
     const connectionLabel =
         connectionState === "connected" ? "Connected" :
-            connectionState === "connecting" ? "Connecting…" :
+            connectionState === "connecting" ? "Connecting..." :
                 connectionState === "disconnected" ? "Disconnected" :
                     connectionState === "failed" ? "Failed" : "Waiting";
 
@@ -137,6 +155,34 @@ export default function CandidateDashboard({ candidateName, role, roomId, onExit
                     </button>
                 </div>
             </nav>
+
+            {/* Prominent Candidate Connect Strip */}
+            <div className="px-6 pt-4">
+                <div className="rounded-2xl border border-blue-500/30 bg-blue-500/10 p-3 flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-blue-300 whitespace-nowrap">Paste Interviewer ID</span>
+                    <input
+                        value={interviewerPeerIdInput}
+                        onChange={(e) => setInterviewerPeerIdInput(e.target.value)}
+                        placeholder="Paste interviewer Peer ID here"
+                        className="flex-1 rounded-md border border-zinc-600 bg-zinc-950 px-3 py-2 text-xs text-white outline-none focus:border-blue-400"
+                    />
+                    <button
+                        type="button"
+                        onClick={handlePasteId}
+                        className="rounded-md bg-zinc-800 px-3 py-2 text-xs font-semibold text-zinc-100 hover:bg-zinc-700"
+                    >
+                        Paste
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setConnectNowSignal((s) => s + 1)}
+                        disabled={!interviewerPeerIdInput.trim()}
+                        className="rounded-md bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        Connect
+                    </button>
+                </div>
+            </div>
 
             {/* Main Content */}
             <main className="flex-1 flex p-4 gap-4 min-h-0">
@@ -204,7 +250,7 @@ export default function CandidateDashboard({ candidateName, role, roomId, onExit
                     {/* Interviewer Video (Remote / Jitsi Wrapper) */}
                     <div className="relative aspect-video bg-zinc-100 dark:bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-sm min-h-[400px]">
                         <div className="absolute inset-0 w-full h-full z-0 pointer-events-auto bg-black shadow-inner">
-                            {JitsiNode}
+                            {videoNode}
                         </div>
                         {connectionState !== "connected" && (
                             <div className="absolute inset-0 flex items-center justify-center bg-zinc-100 dark:bg-zinc-900 z-10">
@@ -237,7 +283,7 @@ export default function CandidateDashboard({ candidateName, role, roomId, onExit
                     <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-4 shadow-sm space-y-4">
                         <div className="flex items-center justify-center gap-3">
                             <button
-                                onClick={toggleAudio}
+                                onClick={() => setIsMicOn((prev) => !prev)}
                                 className={`p-3 rounded-xl border transition-all ${!isMicOn
                                     ? "bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400"
                                     : "bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700"
@@ -246,7 +292,7 @@ export default function CandidateDashboard({ candidateName, role, roomId, onExit
                                 {!isMicOn ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
                             </button>
                             <button
-                                onClick={toggleVideo}
+                                onClick={() => setIsCameraOn((prev) => !prev)}
                                 className={`p-3 rounded-xl border transition-all ${!isCameraOn
                                     ? "bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400"
                                     : "bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700"
@@ -255,7 +301,7 @@ export default function CandidateDashboard({ candidateName, role, roomId, onExit
                                 {!isCameraOn ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
                             </button>
                             <button
-                                onClick={toggleScreenShare}
+                                onClick={() => setIsScreenSharing((prev) => !prev)}
                                 className={`p-3 rounded-xl border transition-all ${isScreenSharing
                                     ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
                                     : "bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700"
@@ -307,7 +353,7 @@ export default function CandidateDashboard({ candidateName, role, roomId, onExit
                         )}
                     </div>
                 </div>
-                <div>Secure Session • End-to-End Encrypted</div>
+                <div>Secure Session | End-to-End Encrypted</div>
             </footer>
         </div>
     );

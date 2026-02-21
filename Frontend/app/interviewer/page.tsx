@@ -8,7 +8,7 @@ function InterviewerContent() {
     const searchParams = useSearchParams();
     const candidateName = searchParams.get("name") || "Sarah Chen";
     const role = searchParams.get("role") || "Senior Frontend Engineer";
-    const roomId = searchParams.get("room") || "default-room";
+    const roomId = "interview";
 
     return (
         <InterviewDashboard

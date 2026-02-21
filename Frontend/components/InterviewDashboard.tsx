@@ -3,9 +3,9 @@ import { gsap } from "gsap";
 import LeftSidebar from "./LeftSidebar";
 import CenterWorkspace from "./CenterWorkspace";
 import RightPanel from "./RightPanel";
-import { useJitsiController } from "@/lib/jitsi-controller";
-import { syncAnalysis } from "@/app/actions/sync-analysis";
+import VoicePeer from "@/components/interview/VoicePeer";
 import type { SyncAnalysisResult } from "@/app/actions/sync-analysis";
+import { clearInterviewPulse, useInterviewClientState } from "@/lib/state/interview-client-store";
 import {
   Mic,
   MicOff,
@@ -24,33 +24,6 @@ import {
   WifiOff
 } from "lucide-react";
 
-// --- Speech Recognition Types ---
-interface SpeechRecognitionEvent extends Event {
-  resultIndex: number;
-  results: {
-    length: number;
-    [index: number]: {
-      isFinal: boolean;
-      [index: number]: {
-        transcript: string;
-      };
-    };
-  };
-}
-
-interface ISpeechRecognition extends EventTarget {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  start(): void;
-  stop(): void;
-  abort(): void;
-  onresult: ((this: ISpeechRecognition, ev: SpeechRecognitionEvent) => unknown) | null;
-  onerror: ((this: ISpeechRecognition, ev: Event) => unknown) | null;
-  onend: ((this: ISpeechRecognition, ev: Event) => unknown) | null;
-}
-// --------------------------------
-
 interface DashboardProps {
   candidateName: string;
   role: string;
@@ -58,29 +31,19 @@ interface DashboardProps {
 }
 
 export default function InterviewDashboard({ candidateName, role, roomId }: DashboardProps) {
-  const {
-    JitsiNode,
-    connectionState,
-    isMicOn,
-    isCameraOn,
-    isScreenSharing,
-    toggleAudio,
-    toggleVideo,
-    toggleScreenShare,
-    leaveCall,
-  } = useJitsiController(roomId);
+  const [connectionState, setConnectionState] = useState<"idle" | "connecting" | "connected" | "disconnected" | "failed">("connecting");
+  const [isMicOn, setIsMicOn] = useState(true);
+  const [isCameraOn, setIsCameraOn] = useState(true);
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
 
   const [activeSidebar, setActiveSidebar] = useState<"dossier" | "intelligence" | "chat" | null>("dossier");
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
-  
-  // Speech Recognition state
-  const transcriptBuffer = useRef<string>("");
-  const recognitionRef = useRef<ISpeechRecognition | null>(null);
-  const [isListening, setIsListening] = useState(false);
-  
+
   // Sync Analysis state
   const [latestSyncResult, setLatestSyncResult] = useState<SyncAnalysisResult | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [interviewerPeerId, setInterviewerPeerId] = useState("");
+  const interviewClientState = useInterviewClientState();
 
   const containerRef = useRef<HTMLDivElement>(null);
   const bottomBarRef = useRef<HTMLDivElement>(null);
@@ -110,100 +73,31 @@ export default function InterviewDashboard({ candidateName, role, roomId }: Dash
     return () => ctx.revert();
   }, []);
 
-  // Initialize SpeechRecognition
-  useEffect(() => {
-    // Check if SpeechRecognition is supported
-    const SpeechRecognitionAPI = (window as any).SpeechRecognition || 
-                                 (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognitionAPI) {
-      console.warn("Speech recognition not supported in this browser.");
-      return;
+  const leaveCall = () => {
+    window.location.href = "/";
+  };
+
+  const handleSyncResult = (result: SyncAnalysisResult) => {
+    setIsSyncing(false);
+    setLatestSyncResult(result);
+    if (result.alert || result.followUpQuestion) {
+      setActiveSidebar("intelligence");
     }
+  };
 
-    const recognition = new SpeechRecognitionAPI() as ISpeechRecognition;
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = 'en-US';
-
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      let finalTranscript = "";
-
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript + " ";
-        }
-      }
-
-      // Append finalized chunks to our buffer
-      if (finalTranscript) {
-        transcriptBuffer.current += finalTranscript;
-      }
-    };
-
-    recognition.onerror = (event: Event) => {
-      console.error("Speech recognition error:", event);
-    };
-
-    recognition.onend = () => {
-      // If we're meant to be listening, automatically restart
-      if (isListening) {
-        try {
-          recognition.start();
-        } catch { /* might already be started */ }
-      }
-    };
-
-    recognitionRef.current = recognition;
-
-    return () => {
-      recognition.stop();
-    };
-  }, [isListening]);
-
-  // Start/Stop listening based on connection
-  useEffect(() => {
-    if (connectionState === "connected" && !isListening) {
-      setIsListening(true);
-      try {
-        recognitionRef.current?.start();
-      } catch { /* ignore */ }
-    } else if (connectionState !== "connected" && isListening) {
-      setIsListening(false);
-      recognitionRef.current?.stop();
-    }
-  }, [connectionState, isListening]);
-
-  // Sync Analysis Loop (every 15s)
-  useEffect(() => {
-    if (!isListening) return;
-
-    const syncTimer = setInterval(async () => {
-      const snippet = transcriptBuffer.current.trim();
-      if (!snippet) return; // Nothing to analyze
-
-      setIsSyncing(true);
-      try {
-        // Clear buffer before sending to avoid re-sending the same text while awaiting
-        transcriptBuffer.current = "";
-        
-        // Use a mock githubAuditContext for now, or pass real data if available in state
-        const mockAuditContext = { candidateName, role }; 
-
-        const result = await syncAnalysis(snippet, mockAuditContext);
-        setLatestSyncResult(result);
-        
-        if (result.alert || result.followUpQuestion) {
-          setActiveSidebar("intelligence"); // Pop open intelligence panel on critical matches
-        }
-      } catch (err) {
-        console.error("Sync Analysis error:", err);
-      } finally {
-        setIsSyncing(false);
-      }
-    }, 15000);
-
-    return () => clearInterval(syncTimer);
-  }, [isListening, candidateName, role]);
+  const videoNode = (
+    <VoicePeer
+      mode="interviewer"
+      githubAuditContext={{ candidateName, role }}
+      micEnabled={isMicOn}
+      onPeerId={setInterviewerPeerId}
+      onConnectionStateChange={(next) => {
+        setConnectionState(next);
+      }}
+      onSyncResult={handleSyncResult}
+      onListeningChange={setIsSyncing}
+    />
+  );
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -211,12 +105,29 @@ export default function InterviewDashboard({ candidateName, role, roomId }: Dash
 
   const connectionLabel =
     connectionState === "connected" ? "Connected" :
-      connectionState === "connecting" ? "Connecting…" :
+      connectionState === "connecting" ? "Connecting..." :
         connectionState === "disconnected" ? "Disconnected" :
           connectionState === "failed" ? "Connection Failed" : "Waiting for peer";
 
   return (
     <div ref={containerRef} className="h-screen flex flex-col bg-zinc-950 text-white overflow-hidden font-sans">
+      {interviewerPeerId && (
+        <div className="px-4 pt-4">
+          <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-300">Share This Peer ID With Candidate</p>
+              <p className="font-mono text-sm text-white break-all">{interviewerPeerId}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigator.clipboard.writeText(interviewerPeerId)}
+              className="rounded-md bg-emerald-500 px-3 py-2 text-xs font-bold text-zinc-950 hover:bg-emerald-400"
+            >
+              Copy ID
+            </button>
+          </div>
+        </div>
+      )}
       {/* Main Content Area */}
       <main className="flex-1 flex p-4 gap-4 min-h-0 relative">
         {/* Left Sidebar (Candidate Dossier) - Always visible */}
@@ -232,15 +143,19 @@ export default function InterviewDashboard({ candidateName, role, roomId }: Dash
         {/* Right Sidebar (Video) - Always visible */}
         <div className="w-80 flex-shrink-0 flex flex-col gap-4">
           <RightPanel
-            JitsiNode={JitsiNode}
+            JitsiNode={videoNode}
             connectionState={connectionState}
             candidateName={candidateName}
           />
           {/* New Truth Meter / Analysis UI Overlay */}
           {latestSyncResult && (
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 shadow-xl">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 shadow-xl relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-blue-500" />
               <h4 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-3 flex items-center justify-between">
-                <span>Real-Time Sync</span>
+                <span className="flex items-center gap-2">
+                  <Triangle className="w-3 h-3 text-emerald-500" /> 
+                  Intelligence LIVE
+                </span>
                 {isSyncing && <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />}
               </h4>
               
@@ -290,20 +205,20 @@ export default function InterviewDashboard({ candidateName, role, roomId }: Dash
         <div className="flex items-center gap-3">
           <ControlButton
             active={isMicOn}
-            onClick={toggleAudio}
+            onClick={() => setIsMicOn((prev) => !prev)}
             icon={isMicOn ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
             danger={!isMicOn}
           />
           <ControlButton
             active={isCameraOn}
-            onClick={toggleVideo}
+            onClick={() => setIsCameraOn((prev) => !prev)}
             icon={isCameraOn ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
             danger={!isCameraOn}
           />
           <ControlButton icon={<Smile className="w-5 h-5" />} />
           <ControlButton
             active={!isScreenSharing}
-            onClick={toggleScreenShare}
+            onClick={() => setIsScreenSharing((prev) => !prev)}
             icon={<Monitor className="w-5 h-5" />}
             danger={isScreenSharing}
           />
@@ -335,11 +250,24 @@ export default function InterviewDashboard({ candidateName, role, roomId }: Dash
             onClick={() => { }}
             icon={<MessageSquare className="w-5 h-5" />}
           />
-          <SidebarToggle
-            active={activeSidebar === "intelligence"}
-            onClick={() => setActiveSidebar(activeSidebar === "intelligence" ? null : "intelligence")}
-            icon={<Triangle className="w-5 h-5" />}
-          />
+          <div className="relative">
+            <SidebarToggle
+              active={activeSidebar === "intelligence"}
+              onClick={() => {
+                const next = activeSidebar === "intelligence" ? null : "intelligence";
+                setActiveSidebar(next);
+                if (next === "intelligence") {
+                  clearInterviewPulse();
+                }
+              }}
+              icon={<Triangle className="w-5 h-5" />}
+            />
+            {(interviewClientState.issueCount > 0 || latestSyncResult?.alert) && activeSidebar !== "intelligence" && (
+              <span className={`absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow shadow-red-500/40 border-2 border-zinc-950 ${interviewClientState.pulseTruthBadge ? "animate-pulse" : ""}`}>
+                {interviewClientState.issueCount > 0 ? interviewClientState.issueCount : 1}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </div>

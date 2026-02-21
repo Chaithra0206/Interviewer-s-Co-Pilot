@@ -6,11 +6,7 @@ export interface CreateInterviewRoomResult {
 }
 
 export async function createInterviewRoom(): Promise<CreateInterviewRoomResult> {
-  const apiKey = process.env.DAILY_API_KEY;
-  if (!apiKey) {
-    throw new Error('Missing DAILY_API_KEY.');
-  }
-
+  // Now using Jitsi, so we just return a unique room name
   return { url: `architectural-scout-${Date.now()}` };
 }
 
