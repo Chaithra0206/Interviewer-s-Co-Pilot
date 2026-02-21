@@ -93,8 +93,8 @@ export default function Lobby({ onStartSession, onJoinSession }: LobbyProps) {
         <div ref={leftRef} className="flex-1 max-w-xl space-y-8 py-12">
           <div className="space-y-6">
             <h1 className="text-5xl lg:text-6xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 leading-[1.1]">
-              Premium technical interviews. <br />
-              <span className="text-zinc-400">Now for everyone.</span>
+              Engineering Interviews  <br />
+              <span className="text-zinc-400">Built for Fairness and Depth</span>
             </h1>
             <p className="text-xl text-zinc-500 dark:text-zinc-400 leading-relaxed">
               We re-engineered the technical assessment experience to be more secure, intelligent, and professional.

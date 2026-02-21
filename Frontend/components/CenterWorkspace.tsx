@@ -25,8 +25,8 @@ export default function CenterWorkspace() {
           <button
             onClick={() => setActiveTab("compiler")}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all text-xs font-bold uppercase tracking-wider ${activeTab === "compiler"
-                ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900"
-                : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+              ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900"
+              : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
               }`}
           >
             <Code2 className="w-3.5 h-3.5" />
@@ -35,8 +35,8 @@ export default function CenterWorkspace() {
           <button
             onClick={() => setActiveTab("screen")}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all text-xs font-bold uppercase tracking-wider ${activeTab === "screen"
-                ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900"
-                : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+              ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900"
+              : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
               }`}
           >
             <Monitor className="w-3.5 h-3.5" />
