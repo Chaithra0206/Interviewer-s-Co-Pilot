@@ -6,20 +6,23 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:scout": "npx -y tsx scripts/test-scout.ts",
+    "test:audit": "npx -y tsx scripts/test-audit.ts"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^3.0.30",
+    "@monaco-editor/react": "^4.6.0",
     "ai": "^6.0.97",
     "better-sqlite3": "^12.6.2",
-    "next": "16.1.6",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "zod": "^4.3.6",
-    "@monaco-editor/react": "^4.6.0",
     "framer-motion": "^11.0.3",
     "gsap": "^3.12.5",
     "lucide-react": "^0.344.0",
-    "monaco-editor": "^0.47.0"
+    "monaco-editor": "^0.47.0",
+    "next": "16.1.6",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

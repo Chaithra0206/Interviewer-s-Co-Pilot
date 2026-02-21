@@ -1,32 +1,46 @@
 'use server';
 
-import { generateText } from 'ai';
+import { generateObject } from 'ai';
+import { z } from 'zod';
 import { model, CandidateContext, getInitialContext } from '../../lib/ai-orchestrator';
 import { analyzeCodebase, SCOUT_PROMPT } from '../../lib/tools/github-analyzer';
+
+const auditResponseSchema = z.object({
+  discrepancies: z.array(z.string()).describe('List of gaps, lies, or contradictions found.'),
+  interviewQuestions: z.array(z.string()).describe('Specific technical questions to pressure-test the candidate on the identified gaps.'),
+});
 
 export async function auditCandidate(
   resumeContext: CandidateContext['resume'],
   githubUrl: string,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _githubMarkdownContent: string
+  githubMarkdownContent: string
 ): Promise<CandidateContext & { interviewQuestions: string[] }> {
-  // We include the markdown content as a parameter since the action itself shouldn't 
-  // be doing the crawling, it gets passed in.
+  
+  // 1. Manually run the Sub-Agent Tool since generateObject doesn't support maxSteps
+  const toolResult = await analyzeCodebase.execute!({
+    repoUrl: githubUrl,
+    markdownContent: githubMarkdownContent,
+    resumeClaims: resumeContext.skills,
+  }, { toolCallId: 'manual', messages: [] }); // Note: second arg varies by version, passing dummy for execute
 
   const systemPrompt = `
     ${SCOUT_PROMPT}
 
     You are an expert technical interviewer and architect. 
-    Your goal is to compare the provided Resume with the findings from the analyzeCodebase tool.
+    Your goal is to compare the provided Resume with the findings from the Sub-Agent's Codebase Analysis tool.
     
     Instructions:
     1. Identify gaps: If the resume says "Expert" but the code is "Basic", flag it.
     2. Identify contradictions: If the resume claims a skill not found in any project, mark it as a "Validation Required" topic.
     3. Generate specific interview questions based on these gaps and contradictions.
     
-    Return your findings in a structured format:
-    - discrepancies: Array of strings identifying lies, gaps or contradictions.
-    - interviewQuestions: Array of strings with specific technical questions to pressure-test the candidate on the identified gaps.
+    Return your findings perfectly matching the JSON schema.
+    OUTPUT ONLY VALID JSON. Do not include markdown formatting, backticks, or conversational text. Start directly with {
+    Example JSON:
+    {
+      "discrepancies": ["Claimed React Expert but found legacy class components."],
+      "interviewQuestions": ["Can you explain the difference between useEffect and componentDidMount?"]
+    }
   `;
 
   const userPrompt = `
@@ -35,75 +49,37 @@ export async function auditCandidate(
     
     GitHub Repository URL: ${githubUrl}
     
-    Please analyze the repository using the provided tool and compare it with the resume.
+    Sub-Agent Code Analysis Findings:
+    ${JSON.stringify(toolResult, null, 2)}
+    
+    Please compare the resume with the findings and generate the discrepancies and questions.
   `;
 
-  // We are using generateText from ai-sdk
-  const { text, toolResults } = await generateText({
+  // 2. Generate structured output
+  const { object } = await generateObject({
     model: model,
+    mode: 'json',
     system: systemPrompt,
     prompt: userPrompt,
-    tools: {
-      analyzeCodebase,
-    },
-    // @ts-expect-error maxSteps relies on newer ai sdk version generics but functions fine
-    maxSteps: 2, // Allow the model to call the tool and then generate the final response
+    schema: auditResponseSchema,
   });
 
-  // In a real application, you would use generateObject for structured output, 
-  // but for this example, we'll extract the data from the text response or 
-  // assume the model returns it in a parseable format if we asked for JSON.
-  
-  // For robustness, let's use generateObject if we want typed output, 
-  // but sticking to generateText as requested:
-  
-  // We'll initialize a context
+  // 3. Construct and return final context
   const context = getInitialContext();
   context.resume = resumeContext;
   
-  // Extract github data from tool results
-  if (toolResults && toolResults.length > 0) {
-    const analysisResult = toolResults.find(r => r.toolName === 'analyzeCodebase');
-    const resultObj = (analysisResult as any)?.result;
-    if (resultObj) {
-        context.githubData.push(resultObj);
-    }
+  if (toolResult) {
+    context.githubData.push(toolResult as any);
   }
 
-  // Very basic parsing of the text response to extract discrepancies and questions
-  // In production, we strongly recommend using generateObject instead of generateText for this.
-  const discrepancies: string[] = [];
-  const interviewQuestions: string[] = [];
-  
-  const lines = text.split('\n');
-  let currentSection = '';
-  
-  for (const line of lines) {
-    const lowerLine = line.toLowerCase();
-    if (lowerLine.includes('discrepanc') || lowerLine.includes('gap') || lowerLine.includes('contradiction')) {
-      currentSection = 'discrepancies';
-      continue;
-    } else if (lowerLine.includes('question') || lowerLine.includes('interview')) {
-      currentSection = 'questions';
-      continue;
-    }
-    
-    if (line.trim().startsWith('-') || line.trim().match(/^\d+\./)) {
-      const cleanLine = line.replace(/^-\s*/, '').replace(/^\d+\.\s*/, '').trim();
-      if (cleanLine) {
-        if (currentSection === 'discrepancies') {
-          discrepancies.push(cleanLine);
-        } else if (currentSection === 'questions') {
-          interviewQuestions.push(cleanLine);
-        }
-      }
-    }
-  }
-
-  context.discrepancies = discrepancies.length > 0 ? discrepancies : ['Model analysis complete. Review raw text for details if lists are empty: ' + text.substring(0, 100) + '...'];
+  context.discrepancies = object.discrepancies.length > 0 
+    ? object.discrepancies 
+    : ['Model analysis complete. No major discrepancies found.'];
 
   return {
     ...context,
-    interviewQuestions: interviewQuestions.length > 0 ? interviewQuestions : ['Could not parse specific questions. Please ask the candidate to walk through their codebase.']
+    interviewQuestions: object.interviewQuestions.length > 0 
+      ? object.interviewQuestions 
+      : ['Could not generate specific questions. Ask the candidate to walk through their codebase.']
   };
 }
