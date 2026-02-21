@@ -6,6 +6,7 @@
 import { useState } from "react";
 import { User, Code, Award, TrendingUp, MapPin, Link as LinkIcon, Brain } from "lucide-react";
 import SkillCloud from "./SkillCloud";
+import TechDNACard from "./TechDNACard";
 import CommitSentiment from "./CommitSentiment";
 import IntelligenceFeed from "./IntelligenceFeed";
 
@@ -22,7 +23,6 @@ const EXPERIENCES: Experience[] = [
   { company: "Linear", role: "Frontend Developer", years: "2017 - 2019", match: "88%" },
 ];
 
-const KEY_STRENGTHS = ["Design Systems", "Performance", "React Architecture", "DX"] as const;
 
 interface SidebarProps {
   candidateName: string;
@@ -51,22 +51,20 @@ export default function LeftSidebar({
       <div className="flex gap-1 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700">
         <button
           onClick={() => setActiveTab("profile")}
-          className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
-            activeTab === "profile"
-              ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm border border-zinc-200 dark:border-zinc-700"
-              : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
-          }`}
+          className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all ${activeTab === "profile"
+            ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm border border-zinc-200 dark:border-zinc-700"
+            : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+            }`}
         >
           <User className="w-3.5 h-3.5" />
           <span>Profile</span>
         </button>
         <button
           onClick={() => setActiveTab("intelligence")}
-          className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
-            activeTab === "intelligence"
-              ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm border border-zinc-200 dark:border-zinc-700"
-              : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
-          }`}
+          className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all ${activeTab === "intelligence"
+            ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm border border-zinc-200 dark:border-zinc-700"
+            : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+            }`}
         >
           <Brain className="w-3.5 h-3.5" />
           <span>Intelligence</span>
@@ -89,7 +87,7 @@ export default function LeftSidebar({
                 Top 1%
               </div>
             </div>
-            
+
             <div className="space-y-1">
               <h2 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">{candidateName}</h2>
               <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">{role}</p>
@@ -116,7 +114,7 @@ export default function LeftSidebar({
               </h3>
               <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">96% MATCH</span>
             </div>
-            
+
             <SkillCloud />
 
             {liveContradiction && (
@@ -127,14 +125,7 @@ export default function LeftSidebar({
                 <p className="mt-1 text-[11px] leading-relaxed text-red-200">{liveContradiction}</p>
               </div>
             )}
-
-            <div className="flex flex-wrap gap-1.5">
-              {KEY_STRENGTHS.map((strength) => (
-                <span key={strength} className="px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 text-[10px] font-medium border border-zinc-200 dark:border-zinc-700">
-                  {strength}
-                </span>
-              ))}
-            </div>
+            <TechDNACard />
           </section>
 
           {/* Commit Sentiment */}
@@ -149,7 +140,7 @@ export default function LeftSidebar({
               <Award className="w-3 h-3" />
               <span>Experience</span>
             </h3>
-            
+
             <div className="space-y-4">
               {EXPERIENCES.map((exp, i) => (
                 <div key={i} className="relative pl-4 border-l border-zinc-200 dark:border-zinc-800 group cursor-default">
