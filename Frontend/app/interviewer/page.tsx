@@ -8,9 +8,20 @@ function InterviewerContent() {
     const searchParams = useSearchParams();
     const candidateName = searchParams.get("name") || "Sarah Chen";
     const role = searchParams.get("role") || "Senior Frontend Engineer";
+<<<<<<< HEAD
+    const roomId = searchParams.get("room") || "default-room";
+
+    return (
+        <InterviewDashboard
+            candidateName={candidateName}
+            role={role}
+            roomId={roomId}
+        />
+=======
 
     return (
         <InterviewDashboard candidateName={candidateName} role={role} />
+>>>>>>> 95535ce4d0d6f9d6bbd465dc08a2173caee37eb4
     );
 }
 

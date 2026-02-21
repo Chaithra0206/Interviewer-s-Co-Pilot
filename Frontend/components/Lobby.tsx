@@ -5,11 +5,19 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
+<<<<<<< HEAD
+import {
+  LayoutGrid,
+  Plus,
+  Copy,
+  Check,
+=======
 import { 
   LayoutGrid, 
   Plus, 
   Copy, 
   Check, 
+>>>>>>> 95535ce4d0d6f9d6bbd465dc08a2173caee37eb4
   Link as LinkIcon,
   Video,
   Keyboard,
@@ -19,7 +27,11 @@ import {
 } from "lucide-react";
 
 interface LobbyProps {
+<<<<<<< HEAD
+  onStartSession: (candidateName: string, role: string, meetingId: string) => void;
+=======
   onStartSession: (candidateName: string, role: string) => void;
+>>>>>>> 95535ce4d0d6f9d6bbd465dc08a2173caee37eb4
   onJoinSession: (code: string) => void;
 }
 
@@ -31,7 +43,11 @@ export default function Lobby({ onStartSession, onJoinSession }: LobbyProps) {
   const [isGenerated, setIsGenerated] = useState(false);
   const [copied, setCopied] = useState(false);
   const [meetingId] = useState(() => Math.random().toString(36).substring(2, 11).match(/.{1,3}/g)?.join('-').toUpperCase() || "ABC-DEFG-HIJ");
+<<<<<<< HEAD
+
+=======
   
+>>>>>>> 95535ce4d0d6f9d6bbd465dc08a2173caee37eb4
   const containerRef = useRef<HTMLDivElement>(null);
   const leftRef = useRef<HTMLDivElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
@@ -44,7 +60,11 @@ export default function Lobby({ onStartSession, onJoinSession }: LobbyProps) {
         duration: 1,
         ease: "power4.out"
       });
+<<<<<<< HEAD
+
+=======
       
+>>>>>>> 95535ce4d0d6f9d6bbd465dc08a2173caee37eb4
       gsap.from(rightRef.current, {
         x: 40,
         opacity: 0,
@@ -102,25 +122,41 @@ export default function Lobby({ onStartSession, onJoinSession }: LobbyProps) {
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-4">
+<<<<<<< HEAD
+            <button
+=======
             <button 
+>>>>>>> 95535ce4d0d6f9d6bbd465dc08a2173caee37eb4
               onClick={() => setShowCreateModal(true)}
               className="w-full sm:w-auto px-6 py-3 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-lg font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-lg shadow-zinc-900/10"
             >
               <Video className="w-5 h-5" />
               New meeting
             </button>
+<<<<<<< HEAD
+
+            <div className="w-full sm:w-auto flex items-center gap-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-4 py-3 focus-within:ring-2 focus-within:ring-zinc-900 dark:focus-within:ring-zinc-100 transition-all">
+              <Keyboard className="w-5 h-5 text-zinc-400" />
+              <input
+                type="text"
+=======
             
             <div className="w-full sm:w-auto flex items-center gap-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg px-4 py-3 focus-within:ring-2 focus-within:ring-zinc-900 dark:focus-within:ring-zinc-100 transition-all">
               <Keyboard className="w-5 h-5 text-zinc-400" />
               <input 
                 type="text" 
+>>>>>>> 95535ce4d0d6f9d6bbd465dc08a2173caee37eb4
                 placeholder="Enter a code or link"
                 value={joinCode}
                 onChange={(e) => setJoinCode(e.target.value)}
                 className="bg-transparent border-none focus:outline-none text-sm font-medium w-full sm:w-40"
               />
             </div>
+<<<<<<< HEAD
+            <button
+=======
             <button 
+>>>>>>> 95535ce4d0d6f9d6bbd465dc08a2173caee37eb4
               onClick={() => joinCode && onJoinSession(joinCode)}
               className="text-zinc-400 font-bold text-sm hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors px-4"
             >
@@ -128,14 +164,22 @@ export default function Lobby({ onStartSession, onJoinSession }: LobbyProps) {
             </button>
           </div>
 
+<<<<<<< HEAD
+
+=======
           
+>>>>>>> 95535ce4d0d6f9d6bbd465dc08a2173caee37eb4
         </div>
 
         {/* Right Visual */}
         <div ref={rightRef} className="flex-1 w-full max-w-2xl">
           <div className="relative aspect-[4/3] rounded-[40px] bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-2xl group">
             <div className="absolute inset-0 bg-gradient-to-br from-zinc-500/10 to-transparent" />
+<<<<<<< HEAD
+
+=======
             
+>>>>>>> 95535ce4d0d6f9d6bbd465dc08a2173caee37eb4
             {/* Mock UI Elements */}
             <div className="absolute top-8 left-8 right-8 bottom-8 flex flex-col gap-4">
               <div className="h-12 w-48 bg-white/50 dark:bg-zinc-800/50 rounded-xl backdrop-blur-sm border border-white/20 dark:border-zinc-700/30" />
@@ -160,7 +204,11 @@ export default function Lobby({ onStartSession, onJoinSession }: LobbyProps) {
       {/* Create Meeting Modal Overlay */}
       {showCreateModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+<<<<<<< HEAD
+          <div
+=======
           <div 
+>>>>>>> 95535ce4d0d6f9d6bbd465dc08a2173caee37eb4
             className="absolute inset-0 bg-zinc-900/40 dark:bg-black/60 backdrop-blur-sm"
             onClick={() => setShowCreateModal(false)}
           />
@@ -176,8 +224,13 @@ export default function Lobby({ onStartSession, onJoinSession }: LobbyProps) {
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Candidate Name</label>
+<<<<<<< HEAD
+                      <input
+                        type="text"
+=======
                       <input 
                         type="text" 
+>>>>>>> 95535ce4d0d6f9d6bbd465dc08a2173caee37eb4
                         required
                         value={candidateName}
                         onChange={(e) => setCandidateName(e.target.value)}
@@ -187,8 +240,13 @@ export default function Lobby({ onStartSession, onJoinSession }: LobbyProps) {
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Target Role</label>
+<<<<<<< HEAD
+                      <input
+                        type="text"
+=======
                       <input 
                         type="text" 
+>>>>>>> 95535ce4d0d6f9d6bbd465dc08a2173caee37eb4
                         required
                         value={role}
                         onChange={(e) => setRole(e.target.value)}
@@ -198,7 +256,11 @@ export default function Lobby({ onStartSession, onJoinSession }: LobbyProps) {
                     </div>
                   </div>
 
+<<<<<<< HEAD
+                  <button
+=======
                   <button 
+>>>>>>> 95535ce4d0d6f9d6bbd465dc08a2173caee37eb4
                     type="submit"
                     className="w-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-xl py-4 font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:opacity-90 transition-all"
                   >
@@ -218,7 +280,11 @@ export default function Lobby({ onStartSession, onJoinSession }: LobbyProps) {
                     <span className="text-sm font-mono text-zinc-500 truncate flex-1">
                       {window.location.origin}/join/{meetingId}
                     </span>
+<<<<<<< HEAD
+                    <button
+=======
                     <button 
+>>>>>>> 95535ce4d0d6f9d6bbd465dc08a2173caee37eb4
                       onClick={handleCopy}
                       className="p-2 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-lg transition-colors"
                     >
@@ -227,14 +293,23 @@ export default function Lobby({ onStartSession, onJoinSession }: LobbyProps) {
                   </div>
 
                   <div className="space-y-3">
+<<<<<<< HEAD
+                    <button
+                      onClick={() => onStartSession(candidateName, role, meetingId)}
+=======
                     <button 
                       onClick={() => onStartSession(candidateName, role)}
+>>>>>>> 95535ce4d0d6f9d6bbd465dc08a2173caee37eb4
                       className="w-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-xl py-4 font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:opacity-90 transition-all"
                     >
                       Start Session
                       <ArrowRight className="w-4 h-4" />
                     </button>
+<<<<<<< HEAD
+                    <button
+=======
                     <button 
+>>>>>>> 95535ce4d0d6f9d6bbd465dc08a2173caee37eb4
                       onClick={() => {
                         setIsGenerated(false);
                         setShowCreateModal(false);

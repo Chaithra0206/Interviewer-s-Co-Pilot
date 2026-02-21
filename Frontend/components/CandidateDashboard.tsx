@@ -17,16 +17,33 @@ import {
     LogOut,
     MessageSquare,
     Settings,
+<<<<<<< HEAD
+    ChevronDown,
+    Wifi,
+    WifiOff
+=======
     ChevronDown
+>>>>>>> 95535ce4d0d6f9d6bbd465dc08a2173caee37eb4
 } from "lucide-react";
 import MonacoEditor, { LANGUAGE_LABELS, DEFAULT_CODE, type SupportedLanguage } from "./MonacoEditor";
 import { motion, AnimatePresence } from "motion/react";
 import { useCodeSender } from "@/hooks/useCodeSync";
 import { executeCode, formatResult } from "@/lib/judge0";
+<<<<<<< HEAD
+import { useWebRTC } from "@/hooks/useWebRTC";
+=======
+>>>>>>> 95535ce4d0d6f9d6bbd465dc08a2173caee37eb4
 
 interface CandidateDashboardProps {
     candidateName: string;
     role: string;
+<<<<<<< HEAD
+    roomId: string;
+    onExit: () => void;
+}
+
+export default function CandidateDashboard({ candidateName, role, roomId, onExit }: CandidateDashboardProps) {
+=======
     onExit: () => void;
 }
 
@@ -34,11 +51,29 @@ export default function CandidateDashboard({ candidateName, role, onExit }: Cand
     const [isMuted, setIsMuted] = useState(false);
     const [isVideoOff, setIsVideoOff] = useState(false);
     const [isSharing, setIsSharing] = useState(false);
+>>>>>>> 95535ce4d0d6f9d6bbd465dc08a2173caee37eb4
     const [language, setLanguage] = useState<SupportedLanguage>("typescript");
     const [code, setCode] = useState<string>(DEFAULT_CODE["typescript"]);
     const [output, setOutput] = useState<string>("> Environment ready. Good luck with your assessment.");
     const [isRunning, setIsRunning] = useState(false);
 
+<<<<<<< HEAD
+    const {
+        localVideoRef,
+        remoteVideoRef,
+        connectionState,
+        isMicOn,
+        isCameraOn,
+        isScreenSharing,
+        toggleMic,
+        toggleCamera,
+        startScreenShare,
+        stopScreenShare,
+        hangUp,
+    } = useWebRTC(roomId);
+
+=======
+>>>>>>> 95535ce4d0d6f9d6bbd465dc08a2173caee37eb4
     const { broadcastCode, broadcastLanguage } = useCodeSender();
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -77,6 +112,25 @@ export default function CandidateDashboard({ candidateName, role, onExit }: Cand
         }
     };
 
+<<<<<<< HEAD
+    const handleHangUp = () => {
+        hangUp();
+        onExit();
+    };
+
+    const connectionLabel =
+        connectionState === "connected" ? "Connected" :
+            connectionState === "connecting" ? "Connecting…" :
+                connectionState === "disconnected" ? "Disconnected" :
+                    connectionState === "failed" ? "Failed" : "Waiting";
+
+    const connectionColor =
+        connectionState === "connected" ? "bg-emerald-500" :
+            connectionState === "connecting" ? "bg-amber-500 animate-pulse" :
+                "bg-zinc-500";
+
+=======
+>>>>>>> 95535ce4d0d6f9d6bbd465dc08a2173caee37eb4
     return (
         <div ref={containerRef} className="h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950 overflow-hidden font-sans">
             {/* Top Navigation */}
@@ -100,7 +154,11 @@ export default function CandidateDashboard({ candidateName, role, onExit }: Cand
                         <Settings className="w-4 h-4" />
                     </button>
                     <button
+<<<<<<< HEAD
+                        onClick={handleHangUp}
+=======
                         onClick={onExit}
+>>>>>>> 95535ce4d0d6f9d6bbd465dc08a2173caee37eb4
                         className="flex items-center gap-2 px-4 py-1.5 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-red-100 dark:hover:bg-red-500/20 transition-all"
                     >
                         <LogOut className="w-3.5 h-3.5" />
@@ -172,6 +230,27 @@ export default function CandidateDashboard({ candidateName, role, onExit }: Cand
 
                 {/* Right: Video & Controls */}
                 <div className="candidate-panel w-80 flex flex-col gap-4">
+<<<<<<< HEAD
+                    {/* Interviewer Video (Remote) */}
+                    <div className="relative aspect-video bg-zinc-100 dark:bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-sm">
+                        <video
+                            ref={remoteVideoRef}
+                            autoPlay
+                            playsInline
+                            className="absolute inset-0 w-full h-full object-cover"
+                        />
+                        {connectionState !== "connected" && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-zinc-100 dark:bg-zinc-900">
+                                <div className="w-16 h-16 rounded-3xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center">
+                                    {connectionState === "connecting" ? (
+                                        <div className="w-6 h-6 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
+                                    ) : (
+                                        <span className="text-xl font-bold text-zinc-400">AR</span>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+=======
                     {/* Interviewer Video */}
                     <div className="relative aspect-video bg-zinc-100 dark:bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-sm">
                         <div className="absolute inset-0 flex items-center justify-center">
@@ -179,10 +258,34 @@ export default function CandidateDashboard({ candidateName, role, onExit }: Cand
                                 <span className="text-xl font-bold text-zinc-400">AR</span>
                             </div>
                         </div>
+>>>>>>> 95535ce4d0d6f9d6bbd465dc08a2173caee37eb4
                         <div className="absolute top-3 left-3 bg-zinc-900/80 backdrop-blur-md text-white text-[9px] font-bold px-2 py-1 rounded-md uppercase tracking-widest border border-white/10">
                             Interviewer
                         </div>
                         <div className="absolute bottom-3 left-3 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md px-3 py-1.5 rounded-xl text-[11px] font-bold text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-800 shadow-sm">
+<<<<<<< HEAD
+                            Interviewer
+                        </div>
+                    </div>
+
+                    {/* Candidate Video (Local — You) */}
+                    <div className="relative aspect-video bg-zinc-100 dark:bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-sm">
+                        <video
+                            ref={localVideoRef}
+                            autoPlay
+                            muted
+                            playsInline
+                            className="absolute inset-0 w-full h-full object-cover mirror"
+                            style={{ transform: "scaleX(-1)" }}
+                        />
+                        {!isCameraOn && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-zinc-100 dark:bg-zinc-900">
+                                <div className="w-16 h-16 rounded-3xl bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center">
+                                    <VideoOff className="w-6 h-6 text-zinc-400" />
+                                </div>
+                            </div>
+                        )}
+=======
                             Alex Rivera
                         </div>
                     </div>
@@ -202,6 +305,7 @@ export default function CandidateDashboard({ candidateName, role, onExit }: Cand
                                 </div>
                             )}
                         </div>
+>>>>>>> 95535ce4d0d6f9d6bbd465dc08a2173caee37eb4
                         <div className="absolute top-3 left-3 bg-zinc-900/80 backdrop-blur-md text-white text-[9px] font-bold px-2 py-1 rounded-md uppercase tracking-widest border border-white/10">
                             You
                         </div>
@@ -214,26 +318,47 @@ export default function CandidateDashboard({ candidateName, role, onExit }: Cand
                     <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-4 shadow-sm space-y-4">
                         <div className="flex items-center justify-center gap-3">
                             <button
+<<<<<<< HEAD
+                                onClick={toggleMic}
+                                className={`p-3 rounded-xl border transition-all ${!isMicOn
+=======
                                 onClick={() => setIsMuted(!isMuted)}
                                 className={`p-3 rounded-xl border transition-all ${isMuted
+>>>>>>> 95535ce4d0d6f9d6bbd465dc08a2173caee37eb4
                                     ? "bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400"
                                     : "bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700"
                                     }`}
                             >
+<<<<<<< HEAD
+                                {!isMicOn ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                            </button>
+                            <button
+                                onClick={toggleCamera}
+                                className={`p-3 rounded-xl border transition-all ${!isCameraOn
+=======
                                 {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
                             </button>
                             <button
                                 onClick={() => setIsVideoOff(!isVideoOff)}
                                 className={`p-3 rounded-xl border transition-all ${isVideoOff
+>>>>>>> 95535ce4d0d6f9d6bbd465dc08a2173caee37eb4
                                     ? "bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400"
                                     : "bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700"
                                     }`}
                             >
+<<<<<<< HEAD
+                                {!isCameraOn ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
+                            </button>
+                            <button
+                                onClick={isScreenSharing ? stopScreenShare : startScreenShare}
+                                className={`p-3 rounded-xl border transition-all ${isScreenSharing
+=======
                                 {isVideoOff ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
                             </button>
                             <button
                                 onClick={() => setIsSharing(!isSharing)}
                                 className={`p-3 rounded-xl border transition-all ${isSharing
+>>>>>>> 95535ce4d0d6f9d6bbd465dc08a2173caee37eb4
                                     ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
                                     : "bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700"
                                     }`}
@@ -250,9 +375,15 @@ export default function CandidateDashboard({ candidateName, role, onExit }: Cand
                         </div>
                     </div>
 
+<<<<<<< HEAD
+                    {/* Screen Sharing Status */}
+                    <AnimatePresence>
+                        {isScreenSharing && (
+=======
                     {/* Sharing Status */}
                     <AnimatePresence>
                         {isSharing && (
+>>>>>>> 95535ce4d0d6f9d6bbd465dc08a2173caee37eb4
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
@@ -276,8 +407,17 @@ export default function CandidateDashboard({ candidateName, role, onExit }: Cand
             <footer className="h-8 border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex items-center justify-between px-6 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
+<<<<<<< HEAD
+                        <span className={`w-1.5 h-1.5 rounded-full ${connectionColor}`} />
+                        {connectionState === "connected" ? (
+                            <><Wifi className="w-3 h-3" /> {connectionLabel}</>
+                        ) : (
+                            <><WifiOff className="w-3 h-3" /> {connectionLabel}</>
+                        )}
+=======
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                         Connection: Stable
+>>>>>>> 95535ce4d0d6f9d6bbd465dc08a2173caee37eb4
                     </div>
                 </div>
                 <div>Secure Session • End-to-End Encrypted</div>
