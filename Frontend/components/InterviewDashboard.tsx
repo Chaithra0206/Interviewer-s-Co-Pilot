@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import LeftSidebar from "./LeftSidebar";
@@ -28,9 +30,10 @@ interface DashboardProps {
   candidateName: string;
   role: string;
   roomId: string;
+  forensicContext?: unknown;
 }
 
-export default function InterviewDashboard({ candidateName, role, roomId }: DashboardProps) {
+export default function InterviewDashboard({ candidateName, role, roomId, forensicContext }: DashboardProps) {
   const [connectionState, setConnectionState] = useState<"idle" | "connecting" | "connected" | "disconnected" | "failed">("connecting");
   const [isMicOn, setIsMicOn] = useState(true);
   const [isCameraOn, setIsCameraOn] = useState(true);
@@ -88,7 +91,8 @@ export default function InterviewDashboard({ candidateName, role, roomId }: Dash
   const videoNode = (
     <VoicePeer
       mode="interviewer"
-      githubAuditContext={{ candidateName, role }}
+      forensicContext={forensicContext ?? { candidateName, role }}
+      githubRepoData={(forensicContext as { githubFindings?: unknown } | undefined)?.githubFindings ?? null}
       micEnabled={isMicOn}
       onPeerId={setInterviewerPeerId}
       onConnectionStateChange={(next) => {
@@ -132,7 +136,14 @@ export default function InterviewDashboard({ candidateName, role, roomId }: Dash
       <main className="flex-1 flex p-4 gap-4 min-h-0 relative">
         {/* Left Sidebar (Candidate Dossier) - Always visible */}
         <div className="w-80 flex-shrink-0">
-          <LeftSidebar candidateName={candidateName} role={role} />
+          <LeftSidebar
+            candidateName={candidateName}
+            role={role}
+            liveContradiction={interviewClientState.latestContradiction}
+            issueCategory={interviewClientState.issueCategory}
+            commitSentimentMatch={interviewClientState.commitSentimentMatch}
+            commitVibeNote={interviewClientState.commitVibeNote}
+          />
         </div>
 
         {/* Center Workspace (The "Stage") */}
@@ -262,9 +273,9 @@ export default function InterviewDashboard({ candidateName, role, roomId }: Dash
               }}
               icon={<Triangle className="w-5 h-5" />}
             />
-            {(interviewClientState.issueCount > 0 || latestSyncResult?.alert) && activeSidebar !== "intelligence" && (
-              <span className={`absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow shadow-red-500/40 border-2 border-zinc-950 ${interviewClientState.pulseTruthBadge ? "animate-pulse" : ""}`}>
-                {interviewClientState.issueCount > 0 ? interviewClientState.issueCount : 1}
+            {(interviewClientState.hasIssue || latestSyncResult?.alert) && activeSidebar !== "intelligence" && (
+              <span className={`absolute -top-1 -right-1 px-2 h-4 bg-red-500 rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow shadow-red-500/40 border-2 border-zinc-950 whitespace-nowrap ${interviewClientState.pulseTruthBadge ? "animate-pulse issue-shake" : ""}`}>
+                {interviewClientState.issueCategory ?? "Issue"}
               </span>
             )}
           </div>

@@ -217,7 +217,7 @@ export function useTruthMeter({
       const payload = transcript || 'Remote participant speaking.';
 
       try {
-        const result = await syncAnalysis(payload, githubAuditContext);
+        const result = await syncAnalysis(payload, githubAuditContext, null);
         pushInterviewSyncResult(result);
         onSyncResult?.(result);
       } catch (error) {

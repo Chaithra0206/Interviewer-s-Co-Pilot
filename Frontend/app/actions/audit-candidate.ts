@@ -42,7 +42,7 @@ export async function auditCandidate(
   const toolResult = await analyzeCodebase.execute!({
     repoUrl: githubUrl,
     resumeClaims: resumeContext.skills,
-    githubMarkdownContent: markdownContext
+    markdownContent: markdownContext
   }, { toolCallId: 'manual', messages: [] });
 
   // Update 3: Judge is finalizing the Savage Verdict...

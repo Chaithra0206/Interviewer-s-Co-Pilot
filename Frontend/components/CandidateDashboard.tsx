@@ -103,7 +103,8 @@ export default function CandidateDashboard({ candidateName, role, roomId, onExit
         <VoicePeer
             mode="candidate"
             initialInterviewerId=""
-            githubAuditContext={{ candidateName, role }}
+            forensicContext={{ candidateName, role }}
+            githubRepoData={null}
             micEnabled={isMicOn}
             remotePeerId={interviewerPeerIdInput}
             onRemotePeerIdChange={setInterviewerPeerIdInput}

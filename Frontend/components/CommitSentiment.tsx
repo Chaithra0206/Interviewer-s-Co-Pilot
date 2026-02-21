@@ -17,6 +17,11 @@ interface Repository {
   trend: TrendType;
 }
 
+interface CommitSentimentProps {
+  liveMatch?: 'aligned' | 'mixed' | 'contradicted' | null;
+  liveVibeNote?: string | null;
+}
+
 const REPOSITORIES: Repository[] = [
   {
     name: "architectural-scout-ui",
@@ -41,7 +46,26 @@ const REPOSITORIES: Repository[] = [
   },
 ];
 
-export default function CommitSentiment() {
+export default function CommitSentiment({ liveMatch, liveVibeNote }: CommitSentimentProps) {
+  const liveLabel =
+    liveMatch === 'aligned' ? 'Aligned with Commit Vibe' :
+    liveMatch === 'mixed' ? 'Partial Vibe Match' :
+    liveMatch === 'contradicted' ? 'Vibe Contradiction' :
+    'No Live Signal';
+
+  const liveAdjustedRepositories = REPOSITORIES.map((repo) => {
+    if (liveMatch === 'aligned') {
+      return { ...repo, quality: Math.min(100, repo.quality + 4), sentiment: 'positive' as const, trend: 'up' as const };
+    }
+    if (liveMatch === 'contradicted') {
+      return { ...repo, quality: Math.max(40, repo.quality - 12), sentiment: 'negative' as const, trend: 'down' as const };
+    }
+    if (liveMatch === 'mixed') {
+      return { ...repo, quality: Math.max(55, repo.quality - 4), sentiment: 'neutral' as const, trend: 'stable' as const };
+    }
+    return repo;
+  });
+
   return (
     <section className="space-y-3">
       <h3 className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.1em] flex items-center gap-1.5">
@@ -50,7 +74,24 @@ export default function CommitSentiment() {
       </h3>
       
       <div className="space-y-2">
-        {REPOSITORIES.map((repo, index) => (
+        <article className="bg-white dark:bg-zinc-900/50 rounded-xl p-3 border border-zinc-200/60 dark:border-zinc-800/60">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Live Alignment</span>
+            <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider border ${
+              liveMatch === 'aligned'
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20'
+                : liveMatch === 'contradicted'
+                ? 'bg-red-50 text-red-700 border-red-100 dark:bg-red-500/10 dark:text-red-300 dark:border-red-500/20'
+                : 'bg-zinc-50 text-zinc-500 border-zinc-100 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700'
+            }`}>
+              {liveLabel}
+            </span>
+          </div>
+          {liveVibeNote && (
+            <p className="mt-2 text-[11px] text-zinc-600 dark:text-zinc-400">{liveVibeNote}</p>
+          )}
+        </article>
+        {liveAdjustedRepositories.map((repo, index) => (
           <RepositoryCard key={`${repo.name}-${index}`} repository={repo} />
         ))}
       </div>
@@ -66,9 +107,19 @@ function RepositoryCard({ repository }: { repository: Repository, key?: React.Ke
       <div className="flex items-center justify-between mb-2">
         <h4 className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 truncate pr-2">{name}</h4>
         <div className="flex items-center gap-1.5">
-          {trend === 'up' ? <TrendingUp className="w-3 h-3 text-emerald-500" /> : <TrendingDown className="w-3 h-3 text-zinc-400" />}
+          {trend === 'up' ? (
+            <TrendingUp className="w-3 h-3 text-emerald-500" />
+          ) : trend === 'down' ? (
+            <TrendingDown className="w-3 h-3 text-red-400" />
+          ) : (
+            <Minus className="w-3 h-3 text-zinc-400" />
+          )}
           <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider border ${
-            sentiment === 'positive' ? 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' : 'bg-zinc-50 text-zinc-500 border-zinc-100 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700'
+            sentiment === 'positive'
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20'
+              : sentiment === 'negative'
+              ? 'bg-red-50 text-red-700 border-red-100 dark:bg-red-500/10 dark:text-red-300 dark:border-red-500/20'
+              : 'bg-zinc-50 text-zinc-500 border-zinc-100 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700'
           }`}>
             {sentiment}
           </span>

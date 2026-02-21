@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Peer, { type MediaConnection } from 'peerjs';
-import type { SyncAnalysisResult } from '@/app/actions/sync-analysis';
-import { useTruthMeter } from '@/hooks/useTruthMeter';
+import { syncAnalysis, type SyncAnalysisResult } from '@/app/actions/sync-analysis';
+import { pushInterviewSyncResult } from '@/lib/state/interview-client-store';
 
 type VoiceMode = 'interviewer' | 'candidate';
 type VoiceConnectionState = 'idle' | 'connecting' | 'connected' | 'disconnected' | 'failed';
@@ -11,7 +11,8 @@ type VoiceConnectionState = 'idle' | 'connecting' | 'connected' | 'disconnected'
 interface VoicePeerProps {
   mode: VoiceMode;
   initialInterviewerId?: string;
-  githubAuditContext: unknown;
+  forensicContext: unknown;
+  githubRepoData?: unknown;
   micEnabled: boolean;
   remotePeerId?: string;
   onRemotePeerIdChange?: (id: string) => void;
@@ -23,10 +24,41 @@ interface VoicePeerProps {
   onListeningChange?: (active: boolean) => void;
 }
 
+interface SpeechRecognitionEvent extends Event {
+  resultIndex: number;
+  results: {
+    length: number;
+    [index: number]: {
+      isFinal: boolean;
+      [index: number]: {
+        transcript: string;
+      };
+    };
+  };
+}
+
+interface ISpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start(): void;
+  stop(): void;
+  abort(): void;
+  onresult: ((this: ISpeechRecognition, ev: SpeechRecognitionEvent) => unknown) | null;
+  onerror: ((this: ISpeechRecognition, ev: Event) => unknown) | null;
+  onend: ((this: ISpeechRecognition, ev: Event) => unknown) | null;
+}
+
+interface SpeechWindow extends Window {
+  SpeechRecognition?: new () => ISpeechRecognition;
+  webkitSpeechRecognition?: new () => ISpeechRecognition;
+}
+
 export default function VoicePeer({
   mode,
   initialInterviewerId = '',
-  githubAuditContext,
+  forensicContext,
+  githubRepoData,
   micEnabled,
   remotePeerId,
   onRemotePeerIdChange,
@@ -41,12 +73,22 @@ export default function VoicePeer({
   const [remoteId, setRemoteId] = useState(initialInterviewerId);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const [connectionState, setConnectionState] = useState<VoiceConnectionState>('connecting');
   const [micPermission, setMicPermission] = useState<'unknown' | 'requesting' | 'granted' | 'denied'>('unknown');
 
   const peerRef = useRef<Peer | null>(null);
   const callRef = useRef<MediaConnection | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const recognitionRef = useRef<ISpeechRecognition | null>(null);
+  const shouldListenRef = useRef(false);
+  const transcriptBufferRef = useRef('');
+  const isAnalyzingRef = useRef(false);
+  const speechRestartTimeoutRef = useRef<number | null>(null);
+  const remoteSpeakingRef = useRef(false);
+  const remoteAnalyserRef = useRef<AnalyserNode | null>(null);
+  const remoteAudioContextRef = useRef<AudioContext | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const remoteStreamRef = useRef<MediaStream | null>(null);
   const [localStreamState, setLocalStreamState] = useState<MediaStream | null>(null);
@@ -59,6 +101,32 @@ export default function VoicePeer({
   useEffect(() => {
     onConnectionStateChange?.(connectionState);
   }, [connectionState, onConnectionStateChange]);
+
+  const runSyncAnalysis = useCallback(async (payload: string): Promise<void> => {
+    if (!payload.trim()) {
+      return;
+    }
+    if (isAnalyzingRef.current) {
+      return;
+    }
+
+    isAnalyzingRef.current = true;
+    setIsAnalyzing(true);
+    onListeningChange?.(true);
+    console.log('[Forensic][TruthMeter] Sync start:', payload.slice(0, 140));
+    try {
+      const result = await syncAnalysis(payload, forensicContext, githubRepoData ?? null);
+      pushInterviewSyncResult(result);
+      onSyncResult?.(result);
+      console.log('[Forensic][TruthMeter] Sync result:', result.alert ?? 'no-alert');
+    } catch (syncError) {
+      console.error('[Forensic][TruthMeter] Sync failed:', syncError);
+    } finally {
+      isAnalyzingRef.current = false;
+      setIsAnalyzing(false);
+      onListeningChange?.(false);
+    }
+  }, [forensicContext, githubRepoData, onListeningChange, onSyncResult]);
 
   const getLocalStream = useCallback(async (): Promise<MediaStream> => {
     if (localStreamRef.current) {
@@ -220,6 +288,160 @@ export default function VoicePeer({
   }, [isSecureContext, requestMicrophone]);
 
   useEffect(() => {
+    const context = new AudioContext();
+    remoteAudioContextRef.current = context;
+    return () => {
+      void context.close();
+      remoteAudioContextRef.current = null;
+      remoteAnalyserRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    const context = remoteAudioContextRef.current;
+    if (!context || !remoteStreamState) {
+      remoteAnalyserRef.current = null;
+      return;
+    }
+
+    const source = context.createMediaStreamSource(remoteStreamState);
+    const analyser = context.createAnalyser();
+    analyser.fftSize = 256;
+    source.connect(analyser);
+    remoteAnalyserRef.current = analyser;
+
+    const samples = new Uint8Array(analyser.frequencyBinCount);
+    let rafId = 0;
+    const tick = () => {
+      analyser.getByteTimeDomainData(samples);
+      let signal = 0;
+      for (const value of samples) {
+        signal += Math.abs(value - 128);
+      }
+      remoteSpeakingRef.current = signal / samples.length > 9;
+      rafId = requestAnimationFrame(tick);
+    };
+    tick();
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      source.disconnect();
+      analyser.disconnect();
+      remoteSpeakingRef.current = false;
+    };
+  }, [remoteStreamState]);
+
+  useEffect(() => {
+    const win = window as SpeechWindow;
+    const SpeechCtor = win.webkitSpeechRecognition || win.SpeechRecognition;
+    if (!SpeechCtor) {
+      console.warn('[Forensic][TruthMeter] SpeechRecognition unavailable in this browser.');
+      return;
+    }
+
+    const recognition = new SpeechCtor();
+    recognition.continuous = true;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      let finalChunk = '';
+      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+        if (event.results[i].isFinal) {
+          finalChunk += `${event.results[i][0].transcript} `;
+        }
+      }
+      if (remoteSpeakingRef.current) {
+        finalChunk += '[Peer remote audio active] ';
+      }
+      if (!finalChunk.trim()) {
+        return;
+      }
+
+      transcriptBufferRef.current += finalChunk;
+      console.log('[Forensic][TruthMeter] Buffer size:', transcriptBufferRef.current.length);
+      if (transcriptBufferRef.current.length >= 100) {
+        const payload = transcriptBufferRef.current.trim();
+        transcriptBufferRef.current = '';
+        void runSyncAnalysis(payload);
+      }
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+      if (shouldListenRef.current) {
+        console.log('[Forensic][TruthMeter] Speech ended, restarting...');
+        speechRestartTimeoutRef.current = window.setTimeout(() => {
+          try {
+            recognition.start();
+            setIsListening(true);
+          } catch {
+            // ignore duplicate starts
+          }
+        }, 50);
+      }
+    };
+
+    recognition.onerror = () => {
+      console.warn('[Forensic][TruthMeter] Speech error, forcing restart.');
+      setIsListening(false);
+      if (shouldListenRef.current) {
+        speechRestartTimeoutRef.current = window.setTimeout(() => {
+          try {
+            recognition.start();
+            setIsListening(true);
+          } catch {
+            // ignore duplicate starts
+          }
+        }, 50);
+      }
+    };
+
+    recognitionRef.current = recognition;
+    return () => {
+      shouldListenRef.current = false;
+      if (speechRestartTimeoutRef.current !== null) {
+        window.clearTimeout(speechRestartTimeoutRef.current);
+      }
+      try {
+        recognition.stop();
+      } catch {
+        // ignore stop errors
+      }
+      recognitionRef.current = null;
+    };
+  }, [runSyncAnalysis]);
+
+  useEffect(() => {
+    const shouldRun = connected && micEnabled;
+    shouldListenRef.current = shouldRun;
+    const recognition = recognitionRef.current;
+    if (!recognition) {
+      return;
+    }
+
+    if (shouldRun) {
+      console.log('[Forensic][TruthMeter] Activating speech listener.');
+      try {
+        recognition.start();
+        setIsListening(true);
+      } catch {
+        // ignore duplicate starts
+      }
+      return;
+    }
+
+    console.log('[Forensic][TruthMeter] Stopping speech listener.');
+    transcriptBufferRef.current = '';
+    try {
+      recognition.stop();
+    } catch {
+      // ignore stop errors
+    }
+    setIsListening(false);
+  }, [connected, micEnabled]);
+
+  useEffect(() => {
     const localStream = localStreamRef.current;
     if (!localStream) {
       return;
@@ -229,22 +451,13 @@ export default function VoicePeer({
     }
   }, [micEnabled]);
 
-  const { isListening } = useTruthMeter({
-    enabled: connected && micEnabled,
-    githubAuditContext,
-    localStream: localStreamState,
-    remoteStream: remoteStreamState,
-    onSyncResult,
-    onListeningChange,
-  });
-
   const waveformBars = useMemo(() => Array.from({ length: 12 }, (_, i) => i), []);
 
   return (
     <div className="h-full w-full rounded-2xl border border-zinc-700 bg-zinc-900 p-4">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="font-mono text-xs font-bold tracking-widest text-emerald-400">SECURE AUDIO LINK</h3>
-        <span className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-widest ${isListening ? 'bg-emerald-500/20 text-emerald-300 animate-pulse' : 'bg-zinc-700 text-zinc-300'}`}>
+        <span className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-widest ${(isAnalyzing || isListening) ? 'bg-emerald-500/20 text-emerald-300 animate-pulse' : 'bg-zinc-700 text-zinc-300'}`}>
           Intelligence LIVE
         </span>
       </div>

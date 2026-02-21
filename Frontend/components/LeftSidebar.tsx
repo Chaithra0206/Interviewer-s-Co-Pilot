@@ -27,11 +27,22 @@ const KEY_STRENGTHS = ["Design Systems", "Performance", "React Architecture", "D
 interface SidebarProps {
   candidateName: string;
   role: string;
+  liveContradiction?: string | null;
+  issueCategory?: string | null;
+  commitSentimentMatch?: 'aligned' | 'mixed' | 'contradicted' | null;
+  commitVibeNote?: string | null;
 }
 
 type TabType = "profile" | "intelligence";
 
-export default function LeftSidebar({ candidateName, role }: SidebarProps) {
+export default function LeftSidebar({
+  candidateName,
+  role,
+  liveContradiction,
+  issueCategory,
+  commitSentimentMatch,
+  commitVibeNote,
+}: SidebarProps) {
   const [activeTab, setActiveTab] = useState<TabType>("profile");
 
   return (
@@ -108,6 +119,15 @@ export default function LeftSidebar({ candidateName, role }: SidebarProps) {
             
             <SkillCloud />
 
+            {liveContradiction && (
+              <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-red-300">
+                  {issueCategory ?? "Savage Gap"}
+                </p>
+                <p className="mt-1 text-[11px] leading-relaxed text-red-200">{liveContradiction}</p>
+              </div>
+            )}
+
             <div className="flex flex-wrap gap-1.5">
               {KEY_STRENGTHS.map((strength) => (
                 <span key={strength} className="px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 text-[10px] font-medium border border-zinc-200 dark:border-zinc-700">
@@ -118,7 +138,10 @@ export default function LeftSidebar({ candidateName, role }: SidebarProps) {
           </section>
 
           {/* Commit Sentiment */}
-          <CommitSentiment />
+          <CommitSentiment
+            liveMatch={commitSentimentMatch}
+            liveVibeNote={commitVibeNote}
+          />
 
           {/* Experience */}
           <section className="space-y-4">
