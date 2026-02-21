@@ -128,16 +128,7 @@ export default function Lobby({ onStartSession, onJoinSession }: LobbyProps) {
             </button>
           </div>
 
-          <div className="pt-8 border-t border-zinc-100 dark:border-zinc-900 flex items-center gap-6">
-            <div className="flex items-center gap-2 text-xs font-bold text-zinc-400 uppercase tracking-widest">
-              <Shield className="w-4 h-4" />
-              Enterprise Grade
-            </div>
-            <div className="flex items-center gap-2 text-xs font-bold text-zinc-400 uppercase tracking-widest">
-              <Zap className="w-4 h-4" />
-              AI Powered
-            </div>
-          </div>
+          
         </div>
 
         {/* Right Visual */}
