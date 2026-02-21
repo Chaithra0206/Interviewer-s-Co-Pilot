@@ -12,14 +12,12 @@ const auditResponseSchema = z.object({
 
 export async function auditCandidate(
   resumeContext: CandidateContext['resume'],
-  githubUrl: string,
-  githubMarkdownContent: string
+  githubUrl: string
 ): Promise<CandidateContext & { interviewQuestions: string[] }> {
   
   // 1. Manually run the Sub-Agent Tool since generateObject doesn't support maxSteps
   const toolResult = await analyzeCodebase.execute!({
     repoUrl: githubUrl,
-    markdownContent: githubMarkdownContent,
     resumeClaims: resumeContext.skills,
   }, { toolCallId: 'manual', messages: [] }); // Note: second arg varies by version, passing dummy for execute
 

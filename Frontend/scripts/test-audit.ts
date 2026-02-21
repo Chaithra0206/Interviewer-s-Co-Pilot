@@ -15,48 +15,10 @@ async function run() {
     education: [],
   };
 
-  const mockGithubUrl = 'https://github.com/alexdev/react-legacy-portfolio';
-  
-  // A simulated chunk of markdown that would typically come from Crawl4AI
-  const mockMarkdownContent = `
-# Legacy React App
-
-## src/App.tsx
-\`\`\`tsx
-import React, { Component } from 'react';
-
-class App extends Component {
-  componentWillMount() {
-    console.log("Fetching legacy data...");
-  }
-  
-  render() {
-    return <div>Hello World</div>;
-  }
-}
-
-export default App;
-\`\`\`
-
-## src/components/Header.tsx
-\`\`\`tsx
-import { useEffect, useState } from 'react';
-
-export function Header() {
-  const [data, setData] = useState(null);
-  
-  useEffect(() => {
-    fetch('/api/data').then(res => res.json()).then(setData);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  
-  return <header>Header {data}</header>;
-}
-\`\`\`
-  `.trim();
+  const mockGithubUrl = 'https://github.com/Kaushik4141/InnovateHubCEC';
 
   try {
-    const result = await auditCandidate(mockResume, mockGithubUrl, mockMarkdownContent);
+    const result = await auditCandidate(mockResume, mockGithubUrl);
     
     console.log('\n✅ Audit Complete!\n');
     console.log('Resulting Context:');

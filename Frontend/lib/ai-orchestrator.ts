@@ -11,6 +11,11 @@ export interface CandidateContext {
     techStack: string[];
     patterns: string[];
     codeQuality: string;
+    engineeringDNA?: {
+      architecturePattern: string;
+      stateManagement: string;
+      namingConventions: string;
+    };
   }>;
   discrepancies: string[];
 }

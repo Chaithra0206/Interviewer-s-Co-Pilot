@@ -14,7 +14,7 @@ export async function fetchRepoStructure(githubUrl: string): Promise<string> {
   try {
     // Assuming backend endpoint is configured or local instance is running for Crawl4AI
     // The exact initialization depends on the environment setup for Crawl4AI
-    crawler = new Crawl4AI({ baseUrl: process.env.CRAWL4AI_URL || 'http://localhost:11235' });
+    crawler = new Crawl4AI({ baseUrl: process.env.CRAWL4AI_URL || 'https://joseph-uncensorable-lubriciously.ngrok' });
   } catch (e) {
     console.error('Ensure Crawl4AI is properly configured.', e);
     throw new Error('Failed to initialize Crawl4AI client.');
