@@ -57,6 +57,7 @@ export async function auditCandidate(
   resumeData: CandidateContext['resume'],
   githubUrl: string,
   githubMarkdownContent: string,
+  jobDescription: string,
 ): Promise<Response> {
   const thoughtTrace: string[] = [];
   const maxSteps = 5;

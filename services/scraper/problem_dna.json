@@ -1,0 +1,20 @@
+{
+  "questionId": "1",
+  "title": "Two Sum",
+  "content": "Given an array of integers \n\nnums\n\n and an integer \n\ntarget\n\n, return \n\nindices of the two numbers such that they add up to \n\ntarget\n\n.\n\nYou may assume that each input would have \n\nexactly\n\n one solution\n\n, and you may not use the \n\nsame\n\n element twice.\n\nYou can return the answer in any order.\n\n \n\nExample 1:\n\nInput:\n\n nums = [2,7,11,15], target = 9\n\nOutput:\n\n [0,1]\n\nExplanation:\n\n Because nums[0] + nums[1] == 9, we return [0, 1].\n\nExample 2:\n\nInput:\n\n nums = [3,2,4], target = 6\n\nOutput:\n\n [1,2]\n\nExample 3:\n\nInput:\n\n nums = [3,3], target = 6\n\nOutput:\n\n [0,1]\n\n \n\nConstraints:\n\n2 <= nums.length <= 10\n\n4\n\n-10\n\n9\n\n <= nums[i] <= 10\n\n9\n\n-10\n\n9\n\n <= target <= 10\n\n9\n\nOnly one valid answer exists.\n\n \n\nFollow-up: \n\nCan you come up with an algorithm that is less than \n\nO(n\n\n2\n\n)\n\n \n\ntime complexity?",
+  "difficulty": "Easy",
+  "topicTags": [
+    "Array",
+    "Hash Table"
+  ],
+  "stats": {
+    "totalAccepted": "20.7M",
+    "totalSubmission": "36.4M"
+  },
+  "hints": [
+    "A really brute force way would be to search for all possible pairs of numbers but that would be too slow. Again, it's best to try out brute force solutions just for completeness. It is from these brute force solutions that you can come up with optimizations.",
+    "So, if we fix one of the numbers, say <code>x</code>, we have to scan the entire array to find the next number <code>y</code> which is <code>value - x</code> where value is the input parameter. Can we change our array somehow so that this search becomes faster?",
+    "The second train of thought is, without changing the array, can we use additional space somehow? Like maybe a hash map to speed up the search?"
+  ],
+  "sampleTestCase": "[2,7,11,15]\n9\n[3,2,4]\n6\n[3,3]\n6"
+}

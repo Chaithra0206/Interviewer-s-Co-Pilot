@@ -19,7 +19,7 @@ import os
 import re
 import sys
 from typing import Any
-from urllib.parse import urljoin
+from urllib.parse import urljoin, quote
 
 try:
     import aiohttp
@@ -48,11 +48,14 @@ KEY_KEYWORDS = {"auth", "middleware", "controller", "route", "service",
                 "provider", "guard", "interceptor", "module", "config",
                 "database", "schema", "model", "migration", "api"}
 
+# File extensions to always fetch
+TARGET_EXTENSIONS = {".js", ".ts", ".py", ".java", ".cpp", ".c", ".go", ".rs"}
+
 # Maximum concurrent tasks
 CONCURRENCY_LIMIT = 8
 
 # Maximum files to fetch content for
-MAX_KEY_FILES = 60
+MAX_KEY_FILES = 300
 
 # Branches to try in order
 CANDIDATE_BRANCHES = ["main", "master", "develop", "dev"]
@@ -135,6 +138,8 @@ def _normalise_repo_url(url: str) -> str:
 def _is_key_file(filename: str) -> bool:
     """Check whether *filename* is architecturally important."""
     lower = filename.lower()
+    if any(lower.endswith(ext) for ext in TARGET_EXTENSIONS):
+        return True
     if lower in KEY_FILES:
         return True
     return any(kw in lower for kw in KEY_KEYWORDS)
@@ -213,7 +218,8 @@ async def _fetch_raw_content(
     if not clean_fp or not _is_valid_path(clean_fp):
         return ""
 
-    url = f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{clean_fp}"
+    quoted_fp = quote(clean_fp)
+    url = f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{quoted_fp}"
 
     close_session = False
     if session is None:
@@ -229,7 +235,12 @@ async def _fetch_raw_content(
             content = await resp.text()
             if not _is_valid_content(content):
                 return ""
-            return content[:8192]
+            # Limit exactly to 150 lines
+            lines = content.splitlines()
+            if len(lines) > 150:
+                lines = lines[:150]
+                lines.append("\n// ... [truncated to 150 lines] ...")
+            return "\n".join(lines)
     except Exception:
         return ""
     finally:

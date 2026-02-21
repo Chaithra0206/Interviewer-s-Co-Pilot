@@ -18,6 +18,8 @@ export interface CandidateContext {
     };
   }>;
   discrepancies: string[];
+  jdMatchScore?: number;
+  signatureMatch?: string;
 }
 
 export function getInitialContext(): CandidateContext {
@@ -29,5 +31,7 @@ export function getInitialContext(): CandidateContext {
     },
     githubData: [],
     discrepancies: [],
+    jdMatchScore: 0,
+    signatureMatch: '',
   };
 }
