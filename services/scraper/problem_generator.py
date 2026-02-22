@@ -57,7 +57,17 @@ def generate_similar_problem(
     solved_slugs: set[str] = {prob.get("slug") for prob in recent_solved if prob.get("slug")}
     collected_similar: list[dict[str, str]] = []
 
-    # Look at the last 5 solved problems to find similar ones
+    # 1.a) Get tags from Skill Stats (Historical)
+    skills = (stats or {}).get("skillStats", {})
+    if isinstance(skills, dict):
+        for category in ["fundamental", "intermediate", "advanced"]:
+            cat_list = skills.get(category, [])
+            for item in cat_list:
+                tag = item.get("tagName")
+                if tag:
+                    all_tags.append(tag)
+
+    # 1.b) Get tags and similar problems from recent history
     for prob in recent_solved[:5]:
         slug = prob.get("slug", "")
         title = prob.get("title", "")
@@ -110,9 +120,12 @@ def generate_similar_problem(
         primary_lang = lang_map.get(primary_lang, primary_lang)
 
     # Determine difficulty level from their stats
-    total = stats.get("total", 0)
-    hard = stats.get("hard", 0)
-    medium = stats.get("medium", 0)
+    # (stats can be a flat dict or the full profile object)
+    solved_stats = stats.get("stats", stats) if isinstance(stats, dict) else {}
+    total = solved_stats.get("total", 0)
+    hard = solved_stats.get("hard", 0)
+    medium = solved_stats.get("medium", 0)
+    
     if hard > 30:
         target_difficulty = "Hard"
     elif medium > 50 or total > 100:

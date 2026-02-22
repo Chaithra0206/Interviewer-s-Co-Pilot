@@ -193,12 +193,13 @@ async def leetcode_audit(req: LeetCodeRequest):
         # 2. Use AI to generate a NEW similar problem
         recent = profile.get("recent_solved", [])
         languages = profile.get("languages", [])
-        stats = profile.get("stats", {})
 
+        # Pass the full profile as stats so generate_similar_problem 
+        # can access skillStats (topics) and solvedStats (counts)
         generated_problem = generate_similar_problem(
             recent_solved=recent,
             languages=languages,
-            stats=stats,
+            stats=profile,
         )
 
         profile["generated_problem"] = generated_problem

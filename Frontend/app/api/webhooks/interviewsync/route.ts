@@ -223,7 +223,8 @@ export async function POST(request: Request): Promise<NextResponse> {
                 ? {
                     hireStatus: finalVerdict.hireStatus,
                     behavioralDNA: finalVerdict.behavioralDNA,
-                    reasoning: finalVerdict.reasoning
+                    reasoning: finalVerdict.reasoning,
+                    behavioralCloser: finalVerdict.behavioralCloser,
                 }
                 : null
         });

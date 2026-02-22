@@ -119,10 +119,37 @@ async def scrape_leetcode_profile(username: str) -> dict[str, Any]:
                 if item.get("problemsSolved", 0) > 0
             ]
 
-    # ── Step 2b: ALWAYS fetch recent solved via GraphQL ────────────────
+    # Initialize skillStats (Historical Tags)
+    skillStats = {}
+    
+    # ── Step 2b: ALWAYS fetch recent solved & tags via GraphQL ────────
     # (Crawl4AI rarely extracts these from the JS-heavy profile page)
-    if True: # Always refresh history to ensure uniqueness
-        print(f"[leetcode-crawl4ai] Fetching recent solved via GraphQL for {username}", file=sys.stderr)
+    if True: # Always refresh history and skills to ensure uniqueness & relevance
+        print(f"[leetcode-crawl4ai] Fetching recent solved and tags via GraphQL for {username}", file=sys.stderr)
+        gql_data = get_leetcode_stats(username)
+        if not gql_data.get("error"):
+            # Update stats if they were missing or zero
+            if not stats.get("total"):
+                solved = gql_data.get("solvedStats", {})
+                stats = {
+                    "easy": solved.get("Easy", 0),
+                    "medium": solved.get("Medium", 0),
+                    "hard": solved.get("Hard", 0),
+                    "total": solved.get("All", 0),
+                }
+            
+            # Update skillStats
+            skillStats = gql_data.get("skillStats", {})
+            
+            # Update languages
+            if not languages:
+                lang_list = gql_data.get("languageStats", [])
+                languages = [
+                    {"name": item["languageName"], "count": item["problemsSolved"]}
+                    for item in lang_list
+                    if item.get("problemsSolved", 0) > 0
+                ]
+
         gql_recent = get_user_solved_problems(username, limit=50)
         if not gql_recent.get("error"):
             # Clear any partial list and use the full history
@@ -173,5 +200,6 @@ async def scrape_leetcode_profile(username: str) -> dict[str, Any]:
         "stats": stats,
         "languages": languages,
         "recent_solved": recent_solved,
+        "skillStats": skillStats,
         "markdown_summary": markdown_summary,
     }
