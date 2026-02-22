@@ -53,6 +53,7 @@ interface IntelligenceFeedProps {
   resumeGaps: string[];
   liveContradiction?: string | null;
   issueCategory?: string | null;
+  onSelect?: (payload: { message: string; action: string }) => void;
 }
 
 export default function IntelligenceFeed({
@@ -60,6 +61,7 @@ export default function IntelligenceFeed({
   resumeGaps,
   liveContradiction,
   issueCategory,
+  onSelect,
 }: IntelligenceFeedProps) {
   const feedRef = useRef<HTMLDivElement>(null);
   const [dynamicItems, setDynamicItems] = useState<Observation[]>(OBSERVATIONS);
@@ -141,10 +143,14 @@ export default function IntelligenceFeed({
                   {obs.message}
                 </p>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700">
+                  <button
+                    type="button"
+                    onClick={() => onSelect?.({ message: obs.message, action: obs.action })}
+                    className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200/60 dark:hover:bg-zinc-700/40 active:scale-[0.99] transition"
+                  >
                     <Zap className="w-2.5 h-2.5 text-zinc-900 dark:text-zinc-100" />
                     <span className="text-[9px] font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider">{obs.action}</span>
-                  </div>
+                  </button>
                   <span className="text-[9px] font-bold text-zinc-300 dark:text-zinc-600 uppercase">{obs.timestamp}</span>
                 </div>
               </div>

@@ -53,9 +53,14 @@ export default function InterviewDashboard({ candidateName, role, roomId, forens
       discrepancies?: string[];
     } & Record<string, unknown>;
   };
-  const followUpQuestions = Array.isArray((forensicRecord.candidateContext as { interviewQuestions?: unknown } | undefined)?.interviewQuestions)
-    ? ((forensicRecord.candidateContext as { interviewQuestions?: string[] }).interviewQuestions ?? [])
+  const baseFollowUpQuestions = Array.isArray(
+    (forensicRecord.candidateContext as { interviewQuestions?: unknown } | undefined)
+      ?.interviewQuestions,
+  )
+    ? ((forensicRecord.candidateContext as { interviewQuestions?: string[] })
+        .interviewQuestions ?? [])
     : [];
+  const [followUpQuestions, setFollowUpQuestions] = useState<string[]>(baseFollowUpQuestions);
   const resumeGaps = forensicRecord.candidateContext?.discrepancies ?? [];
   const resumeSkills = forensicRecord.candidateContext?.resume?.skills ?? [];
 
@@ -67,6 +72,10 @@ export default function InterviewDashboard({ candidateName, role, roomId, forens
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    setFollowUpQuestions(baseFollowUpQuestions);
+  }, [baseFollowUpQuestions]);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -96,6 +105,55 @@ export default function InterviewDashboard({ candidateName, role, roomId, forens
     setLatestSyncResult(result);
     if (result.alert || result.followUpQuestion) {
       setActiveSidebar("intelligence");
+    }
+  };
+
+  const handleSelectIntelligenceItem = async (payload: { message: string; action: string }) => {
+    try {
+      const res = await fetch('/api/followup/next', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          candidateId: roomId,
+          selectedPrompt: payload.message,
+          action: payload.action,
+          forensicContext: forensicContext ?? null,
+        }),
+      });
+
+      const json = (await res.json().catch(() => null)) as unknown;
+      if (!res.ok) {
+        const serverError =
+          json && typeof json === 'object' && 'error' in json
+            ? (json as { error?: unknown }).error
+            : null;
+        const message = typeof serverError === 'string'
+          ? serverError
+          : `HTTP ${res.status} while generating follow-up.`;
+        throw new Error(message);
+      }
+
+      if (!json || typeof json !== 'object' || !('nextQuestion' in json)) {
+        throw new Error('Malformed follow-up response (missing nextQuestion).');
+      }
+
+      const nextQuestion = (json as { nextQuestion?: unknown }).nextQuestion;
+      if (typeof nextQuestion !== 'string' || nextQuestion.trim().length === 0) {
+        throw new Error('Next follow-up question was empty.');
+      }
+
+      setFollowUpQuestions((prev) => {
+        const trimmed = nextQuestion.trim();
+        if (prev.some((q) => q.trim().toLowerCase() === trimmed.toLowerCase())) {
+          return prev;
+        }
+        return [trimmed, ...prev];
+      });
+      setActiveSidebar('intelligence');
+    } catch (error) {
+      console.error('[InterviewDashboard] follow-up generation failed', error);
     }
   };
 
@@ -157,6 +215,7 @@ export default function InterviewDashboard({ candidateName, role, roomId, forens
             issueCategory={interviewClientState.issueCategory}
             commitSentimentMatch={interviewClientState.commitSentimentMatch}
             commitVibeNote={interviewClientState.commitVibeNote}
+            onSelectIntelligenceItem={handleSelectIntelligenceItem}
           />
         </div>
 

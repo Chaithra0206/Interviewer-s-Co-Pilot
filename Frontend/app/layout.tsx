@@ -19,7 +19,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${inter.className} ${jetbrainsMono.variable} bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100`}>
+      <body
+        suppressHydrationWarning
+        className={`${inter.className} ${jetbrainsMono.variable} bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100`}
+      >
         <Providers>{children}</Providers>
       </body>
     </html>

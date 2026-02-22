@@ -34,6 +34,7 @@ interface SidebarProps {
   issueCategory?: string | null;
   commitSentimentMatch?: 'aligned' | 'mixed' | 'contradicted' | null;
   commitVibeNote?: string | null;
+  onSelectIntelligenceItem?: (payload: { message: string; action: string }) => void;
 }
 
 type TabType = "profile" | "intelligence";
@@ -48,6 +49,7 @@ export default function LeftSidebar({
   issueCategory,
   commitSentimentMatch,
   commitVibeNote,
+  onSelectIntelligenceItem,
 }: SidebarProps) {
   const [activeTab, setActiveTab] = useState<TabType>("profile");
 
@@ -194,6 +196,7 @@ export default function LeftSidebar({
           resumeGaps={resumeGaps ?? []}
           liveContradiction={liveContradiction}
           issueCategory={issueCategory}
+          onSelect={onSelectIntelligenceItem}
         />
       )}
     </aside>
