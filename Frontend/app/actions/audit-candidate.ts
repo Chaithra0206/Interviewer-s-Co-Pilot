@@ -32,21 +32,95 @@ export async function auditCandidate(
   githubMarkdownContent?: string,
   send?: SendFn
 ): Promise<CandidateContext & { interviewQuestions: string[] }> {
+  const buildFallback = (reason: string, toolResult?: unknown): CandidateContext & { interviewQuestions: string[] } => {
+    const context = getInitialContext();
+    context.resume = resumeContext;
+    if (
+      toolResult &&
+      typeof toolResult === 'object' &&
+      typeof (toolResult as { [Symbol.asyncIterator]?: unknown })[Symbol.asyncIterator] !== 'function'
+    ) {
+      const result = toolResult as {
+        techStack?: unknown;
+        findings?: unknown;
+        complexityScore?: unknown;
+      };
+      const techStack = Array.isArray(result.techStack)
+        ? result.techStack.filter((item): item is string => typeof item === 'string')
+        : [];
+      const patterns = Array.isArray(result.findings)
+        ? result.findings.filter((item): item is string => typeof item === 'string')
+        : [];
+      const complexityScore =
+        typeof result.complexityScore === 'number' && Number.isFinite(result.complexityScore)
+          ? result.complexityScore
+          : 3;
+      context.githubData.push({
+        techStack,
+        patterns,
+        codeQuality: complexityScore >= 7 ? 'strong' : complexityScore >= 4 ? 'moderate' : 'basic',
+      });
+    }
+    context.jdMatchScore = 60;
+    context.contradictionScore = 45;
+    context.savageVerdict = 'Partial Audit - fallback mode';
+    context.actualApproach = [];
+    context.discrepancies = [`Fallback triggered: ${reason}`];
+    return {
+      ...context,
+      interviewQuestions: [
+        'Walk me through one complex feature and why you designed it this way.',
+        'Which resume claim should we validate first with code evidence?',
+        'What security risk in this repo would you prioritize first?',
+        'How would this architecture scale to 10x load?',
+        'What tradeoff did you intentionally accept and why?',
+      ],
+    };
+  };
 
-  // Update 1: Scout is auditing repository structure...
-  send?.('status', 'Scout is auditing repository structure...');
-  const markdownContext = githubMarkdownContent || await fetchRepoStructure(githubUrl);
+  try {
+    // Update 1: Scout is auditing repository structure...
+    send?.('status', 'Scout is auditing repository structure...');
+    const markdownContext = githubMarkdownContent || await Promise.race([
+      fetchRepoStructure(githubUrl),
+      new Promise<string>((_, reject) => {
+        setTimeout(() => reject(new Error('Repository crawl timed out.')), 30000);
+      }),
+    ]);
+    const boundedMarkdown = (markdownContext || '').substring(0, 12000);
 
-  // Update 2: Analyst is comparing React patterns against JD...
-  send?.('status', 'Analyst is comparing React patterns against JD...');
-  const toolResult = await analyzeCodebase.execute!({
-    repoUrl: githubUrl,
-    resumeClaims: resumeContext.skills,
-    markdownContent: markdownContext
-  }, { toolCallId: 'manual', messages: [] });
+    // Update 2: Analyst is comparing React patterns against JD...
+    send?.('status', 'Analyst is comparing React patterns against JD...');
+    const toolResult = await Promise.race([
+      analyzeCodebase.execute!(
+        {
+          repoUrl: githubUrl,
+          resumeClaims: resumeContext.skills,
+          markdownContent: boundedMarkdown,
+        },
+        { toolCallId: 'manual', messages: [] },
+      ),
+      new Promise<{
+        contradictionScore: number;
+        techStack: string[];
+        complexityScore: number;
+        gaps: string[];
+        findings: string[];
+      }>((resolve) => {
+        setTimeout(() => {
+          resolve({
+            contradictionScore: 35,
+            techStack: [],
+            complexityScore: 3,
+            gaps: ['Codebase analyzer timed out - fallback evidence used.'],
+            findings: ['Analyzer timeout fallback.'],
+          });
+        }, 30000);
+      }),
+    ]);
 
-  // Update 3: Judge is finalizing the Savage Verdict...
-  send?.('status', 'Judge is finalizing the Savage Verdict...');
+    // Update 3: Judge is finalizing the Savage Verdict...
+    send?.('status', 'Judge is finalizing the Savage Verdict...');
 
   const systemPrompt = `
     ${SCOUT_PROMPT}
@@ -68,7 +142,7 @@ export async function auditCandidate(
     Return your findings perfectly matching the JSON schema.
   `;
 
-  const userPrompt = `
+    const userPrompt = `
     Candidate Resume:
     ${JSON.stringify(resumeContext, null, 2)}
     
@@ -78,7 +152,7 @@ export async function auditCandidate(
     ${jobDescription || 'None provided'}
     
     Fethed GitHub Markdown (Structure and code snippets):
-    ${markdownContext.substring(0, 10000)}
+    ${boundedMarkdown.substring(0, 8000)}
     
     Sub-Agent Code Analysis Findings:
     ${JSON.stringify(toolResult, null, 2)}
@@ -86,36 +160,68 @@ export async function auditCandidate(
     Please compare the resume with the findings and generate the JSON audit.
   `;
 
-  const { object } = await streamObject({
-    model: model,
-    system: systemPrompt,
-    prompt: userPrompt,
-    schema: auditResponseSchema,
-  });
+    const { object } = await streamObject({
+      model: model,
+      system: systemPrompt,
+      prompt: userPrompt,
+      schema: auditResponseSchema,
+    });
+    const resolvedObject = await Promise.race([
+      object,
+      new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Final audit synthesis timed out.')), 45000);
+      }),
+    ]);
 
-  const resolvedObject = await object;
+    // Construct and return final context
+    const context = getInitialContext();
+    context.resume = resumeContext;
 
-  // Construct and return final context
-  const context = getInitialContext();
-  context.resume = resumeContext;
+    if (
+      toolResult &&
+      typeof toolResult === 'object' &&
+      typeof (toolResult as { [Symbol.asyncIterator]?: unknown })[Symbol.asyncIterator] !== 'function'
+    ) {
+      const result = toolResult as {
+        techStack?: unknown;
+        findings?: unknown;
+        complexityScore?: unknown;
+      };
+      const techStack = Array.isArray(result.techStack)
+        ? result.techStack.filter((item): item is string => typeof item === 'string')
+        : [];
+      const patterns = Array.isArray(result.findings)
+        ? result.findings.filter((item): item is string => typeof item === 'string')
+        : [];
+      const complexityScore =
+        typeof result.complexityScore === 'number' && Number.isFinite(result.complexityScore)
+          ? result.complexityScore
+          : 3;
+      context.githubData.push({
+        techStack,
+        patterns,
+        codeQuality: complexityScore >= 7 ? 'strong' : complexityScore >= 4 ? 'moderate' : 'basic',
+      });
+    }
 
-  if (toolResult) {
-    context.githubData.push(toolResult as any);
+    context.jdMatchScore = resolvedObject.jdMatchScore;
+    context.contradictionScore = resolvedObject.contradictionScore;
+    context.savageVerdict = resolvedObject.savageVerdict;
+    context.actualApproach = resolvedObject.actualApproach;
+
+    context.discrepancies = resolvedObject.discrepancies.length > 0
+      ? resolvedObject.discrepancies
+      : ['Model analysis complete. No major discrepancies found.'];
+
+    return {
+      ...context,
+      interviewQuestions: resolvedObject.interviewQuestions.length > 0
+        ? resolvedObject.interviewQuestions
+        : ['Could not generate specific questions. Ask the candidate to walk through their codebase.']
+    };
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : 'Unknown audit error';
+    console.error('[auditCandidate] Fallback engaged:', reason);
+    return buildFallback(reason);
   }
-
-  context.jdMatchScore = resolvedObject.jdMatchScore;
-  context.contradictionScore = resolvedObject.contradictionScore;
-  context.savageVerdict = resolvedObject.savageVerdict;
-  context.actualApproach = resolvedObject.actualApproach;
-
-  context.discrepancies = resolvedObject.discrepancies.length > 0
-    ? resolvedObject.discrepancies
-    : ['Model analysis complete. No major discrepancies found.'];
-
-  return {
-    ...context,
-    interviewQuestions: resolvedObject.interviewQuestions.length > 0
-      ? resolvedObject.interviewQuestions
-      : ['Could not generate specific questions. Ask the candidate to walk through their codebase.']
-  };
 }

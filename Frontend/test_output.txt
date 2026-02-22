@@ -1,0 +1,3 @@
+﻿[dotenv@17.2.3] injecting env (6) from .env.local -- tip: ≡ƒôí add observability to secrets: https://dotenvx.com/ops
+Testing official Cerebras SDK integration...
+API Key present: true
