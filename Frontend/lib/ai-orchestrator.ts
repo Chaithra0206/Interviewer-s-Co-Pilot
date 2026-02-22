@@ -1,17 +1,6 @@
-<<<<<<< Updated upstream
-import { createOpenAI } from '@ai-sdk/openai';
-
-const cerebras = createOpenAI({
-  baseURL: 'https://api.cerebras.ai/v1',
-  apiKey: process.env.CEREBRAS_API_KEY,
-});
-
-export const model = cerebras.chat('llama3.1-8b');
-=======
 import { model as cerebrasModel } from './ai/config';
-export const model = cerebrasModel;
 
->>>>>>> Stashed changes
+export const model = cerebrasModel;
 
 export interface CandidateContext {
   resume: {

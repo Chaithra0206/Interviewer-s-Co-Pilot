@@ -1,4 +1,6 @@
+import 'dotenv/config';
 import { auditCandidate } from '../app/actions/audit-candidate';
+
 
 async function run() {
   console.log('🚀 Starting Alex Dev Simulation...');
